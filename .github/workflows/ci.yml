@@ -27,6 +27,18 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Install nix 2.3.6
+        uses: cachix/install-nix-action@v13
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.3.6/install
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Use maker and dapp cachix
+        uses: cachix/cachix-action@v10
+        with:
+          name: maker
+          extraPullNames: dapp
+
       - name: Cache Yarn dependencies
         uses: actions/cache@v2
         with:
