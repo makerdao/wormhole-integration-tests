@@ -48,8 +48,6 @@ jobs:
           key: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-${{ hashFiles('**/yarn.lock') }}
           restore-keys: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-
 
-      - name: Setup SSH debug session
-        uses: mxschmitt/action-tmate@v2
       - run: nix-shell --pure --run 'bash ./scripts/setup.sh'
 
       - run: yarn lint
