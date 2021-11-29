@@ -47,8 +47,7 @@ jobs:
             */*/node_modules
           key: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-${{ hashFiles('**/yarn.lock') }}
           restore-keys: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-
-
-      - run: nix-shell --pure --run 'bash ./scripts/setup.sh'
+      - run: nix run ./scripts/setup.sh
 
       - run: yarn lint
       - run: yarn format
