@@ -17,6 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          ssh-key: ${{ secrets.SSH_KEY }} # deploy key with access to dss-wormhole
           submodules: true
 
       - uses: actions/setup-node@v1
