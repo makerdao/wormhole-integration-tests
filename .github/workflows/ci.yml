@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: makerdao/dss-wormhole
-          path: /tmp
+          path: ./tmp
           ssh-key: ${{ secrets.SSH_KEY }}
           persist-credentials: true
       - run: git submodule update --init --recursive
