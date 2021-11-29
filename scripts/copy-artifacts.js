@@ -23,6 +23,11 @@ function copyDappToolsArtifact(inputDirPath, name, destinationDirPath) {
 const dappToolsArtifacts = join(__dirname, '../repos/dss-wormhole/out/')
 const output = join(__dirname, '../external-artifacts')
 
+if (!fs.existsSync(output)) {
+  console.log(`Creating ${output} dir`)
+  fs.mkdirSync(output)
+}
+
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeJoin', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeConstantFee', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeOracleAuth', output)
