@@ -1,0 +1,6 @@
+[submodule "repos/optimism-dai-bridge"]
+	path = repos/optimism-dai-bridge
+	url = https://github.com/makerdao/optimism-dai-bridge
+[submodule "repos/dss-wormhole"]
+	path = repos/dss-wormhole
+	url = git@github.com:makerdao/dss-wormhole.git
