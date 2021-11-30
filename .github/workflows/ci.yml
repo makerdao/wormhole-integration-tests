@@ -51,7 +51,7 @@ jobs:
       - run: nix-shell --run 'bash ./scripts/setup.sh'
 
       - run: yarn lint
-      - run: yarn format
+      # - run: yarn format
       - run: yarn build
       - run: yarn test
       - run: yarn typecheck
