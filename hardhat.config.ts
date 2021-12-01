@@ -12,7 +12,9 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: 'https://mainnet.infura.io/v3/90b33e5399ee4a12aabe9978fbfab011',
+        url: process.env.L2
+          ? 'https://optimism-mainnet.infura.io/v3/90b33e5399ee4a12aabe9978fbfab011'
+          : 'https://mainnet.infura.io/v3/90b33e5399ee4a12aabe9978fbfab011',
       },
     },
   },

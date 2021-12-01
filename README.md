@@ -11,6 +11,7 @@ git submodule update --init --recursive # init submodules
 
 ./scripts/setup.sh # build submodules, copy artifacts, build this project
 
+yarn node:l2 # runs Optimism fork mode
 yarn test
 ```
 
