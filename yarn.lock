@@ -40,10 +40,10 @@
   resolved "https://registry.yarnpkg.com/@dethcrypto/eth-sdk-client/-/eth-sdk-client-0.1.5.tgz#a27b0cc19a050c4a8340c25f02ac9ffb26e0ff6d"
   integrity sha512-zmUvgp6Xu99EjUOCE+LzeLX3vDSeS8MrYPXqXIiTr1Q5WN7ojrOPcP2HUvL0zSKIGbBrdKFOFx9IuXl2n1Zn3g==
 
-"@dethcrypto/eth-sdk@^0.2.2":
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/@dethcrypto/eth-sdk/-/eth-sdk-0.2.2.tgz#4fe79d7931d341e039f790735472de5b1f4475be"
-  integrity sha512-JQxrcalUtyQTHDObu5MxLJVe3bh40lETjpzntcL2K+4TFyxn30k/d1yeE3gIq6Wd8U5lwSRmqT+gg1+7hUKqSA==
+"@dethcrypto/eth-sdk@^0.2.4":
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/@dethcrypto/eth-sdk/-/eth-sdk-0.2.4.tgz#9c91c14f3a977b181c1d4ac8f2e181ee62f1a856"
+  integrity sha512-UHUbFGuzP7XMOTVDg6/uomIzP8sSudvEUM+2gJJ3NZFy1CX5jKVGFlgZafSf2jv4fJ1yzb/aAm441rXPO/kOcQ==
   dependencies:
     "@typechain/ethers-v5" "^8.0.1"
     chalk "^4.1.2"

@@ -3,18 +3,13 @@ import hre from 'hardhat'
 
 export async function impersonateAccount(
   address: string,
-  { setBalance }: { setBalance?: boolean } = {},
+  provider: ethers.providers.JsonRpcProvider = hre.ethers.provider,
 ): Promise<ethers.Signer> {
-  await hre.network.provider.request({
-    method: 'hardhat_impersonateAccount',
-    params: [address],
-  })
+  await provider.send('hardhat_impersonateAccount', [address])
 
-  if (setBalance) {
-    await hre.network.provider.send('hardhat_setBalance', [address, '0x10000000000000000'])
-  }
+  await provider.send('hardhat_setBalance', [address, '0x10000000000000000'])
 
-  const signer = await hre.ethers.getSigner(address)
+  const signer = provider.getSigner(address)
 
   return signer
 }
