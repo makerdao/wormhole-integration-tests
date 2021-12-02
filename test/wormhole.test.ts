@@ -1,12 +1,12 @@
 import { getMainnetSdk, getOptimismSdk } from '@dethcrypto/eth-sdk-client'
+import { expect } from 'chai'
+import { Wallet } from 'ethers'
 import { ethers } from 'hardhat'
-// import { connectWallets, getRandomWallets, waitForTx } from '@makerdao/hardhat-utils'
 
+import { getAttestations } from './attestations'
 import { deployBridge } from './bridge'
 import { formatWad, impersonateAccount, toEthersBigNumber, toRad, toRay, toWad } from './helpers'
 import { deployWormhole } from './wormhole'
-import { getAttestations } from './attestations'
-import { expect } from 'chai'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings
 const bytes32 = ethers.utils.formatBytes32String
@@ -21,16 +21,6 @@ const mainnetDomain = bytes32('MAINNET')
 const ilk = bytes32('WORMHOLE')
 const line = toEthersBigNumber(toRad(10_000_000)) // 10M debt ceiling
 const spot = toEthersBigNumber(toRay(1))
-
-// @todo: fix makerdao/pe-utils
-import { providers, Wallet } from 'ethers'
-function getRandomWallets(n: number): Wallet[] {
-  const wallets = [...Array(n)]
-  return wallets.map(() => Wallet.createRandom())
-}
-function connectWallets(wallets: Wallet[], provider: providers.BaseProvider): Wallet[] {
-  return wallets.map((w) => w.connect(provider))
-}
 
 describe('Wormhole', () => {
   it('works', async () => {
@@ -61,9 +51,9 @@ describe('Wormhole', () => {
 
     const amt = toEthersBigNumber(toWad(1))
 
-    const oracleWallets = connectWallets(getRandomWallets(3), l1Provider)
+    const oracleWallets = [...Array(3)].map(() => Wallet.createRandom())
 
-    const { join, oracleAuth } = await deployWormhole({
+    const { oracleAuth } = await deployWormhole({
       defaultSigner: l1Signer,
       sdk: mainnetSdk,
       ilk,

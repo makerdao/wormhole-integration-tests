@@ -1,11 +1,11 @@
 import { MainnetSdk } from '@dethcrypto/eth-sdk-client'
 import { BigNumber, Signer } from 'ethers'
+import { hexlify, hexZeroPad } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 import { Dictionary } from 'ts-essentials'
 
 import { WormholeConstantFee__factory, WormholeJoin__factory, WormholeOracleAuth__factory } from '../typechain'
 import { getContractFactory } from './helpers'
-import { hexlify, hexZeroPad } from 'ethers/lib/utils'
 
 const bytes32 = ethers.utils.formatBytes32String
 
