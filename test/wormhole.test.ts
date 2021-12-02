@@ -1,9 +1,12 @@
 import { getMainnetSdk, getOptimismSdk } from '@dethcrypto/eth-sdk-client'
 import { ethers } from 'hardhat'
+// import { connectWallets, getRandomWallets, waitForTx } from '@makerdao/hardhat-utils'
 
 import { deployBridge } from './bridge'
 import { formatWad, impersonateAccount, toEthersBigNumber, toRad, toRay, toWad } from './helpers'
 import { deployWormhole } from './wormhole'
+import { getAttestations } from './attestations'
+import { expect } from 'chai'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings
 const bytes32 = ethers.utils.formatBytes32String
@@ -18,6 +21,16 @@ const mainnetDomain = bytes32('MAINNET')
 const ilk = bytes32('WORMHOLE')
 const line = toEthersBigNumber(toRad(10_000_000)) // 10M debt ceiling
 const spot = toEthersBigNumber(toRay(1))
+
+// @todo: fix makerdao/pe-utils
+import { providers, Wallet } from 'ethers'
+function getRandomWallets(n: number): Wallet[] {
+  const wallets = [...Array(n)]
+  return wallets.map(() => Wallet.createRandom())
+}
+function connectWallets(wallets: Wallet[], provider: providers.BaseProvider): Wallet[] {
+  return wallets.map((w) => w.connect(provider))
+}
 
 describe('Wormhole', () => {
   it('works', async () => {
@@ -41,17 +54,16 @@ describe('Wormhole', () => {
       l2Signer,
     })
 
-    const user = await impersonateAccount(userAddress, l2Provider)
+    const l1User = await impersonateAccount(userAddress, l1Provider)
+    const l2User = await impersonateAccount(userAddress, l2Provider)
 
     console.log('L2 DAI balance: ', formatWad(await optimismSdk.dai.balanceOf(userAddress)))
 
-    const amt = toEthersBigNumber(toWad(100))
-    // here we need to intercept generated event and generate attestations for it
-    await l2WormholeBridge.connect(user).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
+    const amt = toEthersBigNumber(toWad(1))
 
-    console.log('L2 DAI balance after: ', formatWad(await optimismSdk.dai.balanceOf(userAddress)))
+    const oracleWallets = connectWallets(getRandomWallets(3), l1Provider)
 
-    const { join } = await deployWormhole({
+    const { join, oracleAuth } = await deployWormhole({
       defaultSigner: l1Signer,
       sdk: mainnetSdk,
       ilk,
@@ -61,21 +73,20 @@ describe('Wormhole', () => {
       domainsCfg: {
         [optimismDomain]: { line },
       },
+      oracleAddresses: oracleWallets.map((or) => or.address),
     })
 
-    // this should use oracle auth
-    await join.registerWormholeAndWithdraw(
-      {
-        sourceDomain: optimismDomain,
-        targetDomain: mainnetDomain,
-        receiver: l1SignerAddress,
-        operator: l1SignerAddress,
-        nonce: 0,
-        amount: toEthersBigNumber(toWad(100)),
-        timestamp: 0,
-      },
-      100,
+    const tx = await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
+    const { signHash, signatures, wormholeGUID } = await getAttestations(
+      await tx.wait(),
+      l2WormholeBridge.interface,
+      oracleWallets,
     )
-    console.log(`Balance after mint: ${formatWad(await mainnetSdk.dai.balanceOf(l1SignerAddress))} DAI`)
+    expect(await oracleAuth.isValid(signHash, signatures, oracleWallets.length)).to.be.true
+
+    const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
+    await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0)
+    const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
+    expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt))
   })
 })
