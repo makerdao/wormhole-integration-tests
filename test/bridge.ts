@@ -21,7 +21,7 @@ export async function deployBridge(opts: BridgeDeployOpts) {
     constants.AddressZero, // @todo
     opts.domain,
   ])
-  // @todo wormhole bridge should be relied on DAI
+  await opts.optimismSdk.dai.rely(l2WormholeBridge.address)
 
   console.log('l2WormholeBridge deployed at:', l2WormholeBridge.address)
 
