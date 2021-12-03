@@ -7,3 +7,5 @@
 [submodule "repos/optimism-monorepo"]
 	path = repos/optimism-monorepo
 	url = https://github.com/krzkaczor/optimism.git
+	ignore = dirty
+
