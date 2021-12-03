@@ -4,7 +4,13 @@ import { hexlify, hexZeroPad } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 import { Dictionary } from 'ts-essentials'
 
-import { WormholeConstantFee__factory, WormholeJoin__factory, WormholeOracleAuth__factory } from '../typechain'
+import {
+  WormholeConstantFee__factory,
+  WormholeJoin,
+  WormholeJoin__factory,
+  WormholeOracleAuth,
+  WormholeOracleAuth__factory,
+} from '../typechain'
 import { getContractFactory } from './helpers'
 
 const bytes32 = ethers.utils.formatBytes32String
@@ -27,7 +33,7 @@ export async function deployWormhole({
   joinDomain: string
   domainsCfg: Dictionary<{ line: BigNumber }>
   oracleAddresses: string[]
-}) {
+}): Promise<{ join: WormholeJoin; oracleAuth: WormholeOracleAuth }> {
   const WormholeJoinFactory = getContractFactory<WormholeJoin__factory>('WormholeJoin', defaultSigner)
   const join = await WormholeJoinFactory.deploy(sdk.vat.address, sdk.dai_join.address, ilk, joinDomain)
   console.log('WormholeJoin deployed at: ', join.address)
