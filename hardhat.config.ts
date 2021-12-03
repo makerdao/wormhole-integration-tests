@@ -10,13 +10,7 @@ dotenv.config()
 const config: HardhatUserConfig = {
   solidity: '0.8.9',
   networks: {
-    hardhat: {
-      forking: {
-        url: process.env.L2
-          ? 'https://optimism-mainnet.infura.io/v3/90b33e5399ee4a12aabe9978fbfab011'
-          : 'https://mainnet.infura.io/v3/90b33e5399ee4a12aabe9978fbfab011',
-      },
-    },
+    hardhat: {},
   },
   mocha: {
     timeout: 120_000,
