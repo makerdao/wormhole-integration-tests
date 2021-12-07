@@ -5,7 +5,7 @@ import { Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
 import { getAttestations } from './attestations'
-import { deployBridge } from './bridge'
+import { deployBridges } from './bridge'
 import { formatWad, impersonateAccount, toEthersBigNumber, toRad, toRay, toWad } from './helpers'
 import { deployWormhole } from './wormhole'
 
@@ -33,9 +33,11 @@ describe('Wormhole', () => {
   let l2User: any
   let l1Signer: any
   let l2Signer: any
+  let l1WormholeBridge: any
   let l2WormholeBridge: any
   let oracleAuth: any
   let join: any
+  let router: any
   let mainnetSdk: any
   let optimismSdk: any
 
@@ -57,16 +59,6 @@ describe('Wormhole', () => {
   })
 
   beforeEach(async () => {
-    l2WormholeBridge = (
-      await deployBridge({
-        domain: optimismDomain,
-        mainnetSdk,
-        optimismSdk,
-        l1Signer,
-        l2Signer,
-      })
-    ).l2WormholeBridge
-
     const wh = await deployWormhole({
       defaultSigner: l1Signer,
       sdk: mainnetSdk,
@@ -79,7 +71,20 @@ describe('Wormhole', () => {
       },
       oracleAddresses: oracleWallets.map((or) => or.address),
     })
-    ;({ join, oracleAuth } = wh)
+    ;({ join, oracleAuth, router } = wh)
+
+    const bridges = await deployBridges({
+      domain: optimismDomain,
+      mainnetSdk,
+      optimismSdk,
+      l1Signer,
+      l2Signer,
+      wormholeRouter: router.address,
+    })
+    ;({ l1WormholeBridge, l2WormholeBridge } = bridges)
+
+    console.log('Configuring router...')
+    await router['file(bytes32,bytes32,address)'](bytes32('bridge'), mainnetDomain, l1WormholeBridge.address)
   })
 
   it('lets a user request minted DAI on L1 using oracle attestations', async () => {

@@ -10,6 +10,8 @@ import {
   WormholeJoin__factory,
   WormholeOracleAuth,
   WormholeOracleAuth__factory,
+  WormholeRouter,
+  WormholeRouter__factory,
 } from '../typechain'
 import { getContractFactory } from './helpers'
 
@@ -33,7 +35,7 @@ export async function deployWormhole({
   joinDomain: string
   domainsCfg: Dictionary<{ line: BigNumber }>
   oracleAddresses: string[]
-}): Promise<{ join: WormholeJoin; oracleAuth: WormholeOracleAuth }> {
+}): Promise<{ join: WormholeJoin; oracleAuth: WormholeOracleAuth; router: WormholeRouter }> {
   const WormholeJoinFactory = getContractFactory<WormholeJoin__factory>('WormholeJoin', defaultSigner)
   const join = await WormholeJoinFactory.deploy(sdk.vat.address, sdk.dai_join.address, ilk, joinDomain)
   console.log('WormholeJoin deployed at: ', join.address)
@@ -60,5 +62,9 @@ export async function deployWormhole({
   await oracleAuth.file(bytes32('threshold'), hexZeroPad(hexlify(oracleAddresses.length), 32))
   await oracleAuth.connect(defaultSigner).addSigners(oracleAddresses)
 
-  return { join, oracleAuth }
+  console.log('Deploying router...')
+  const WormholeRouterFactory = getContractFactory<WormholeRouter__factory>('WormholeRouter', defaultSigner)
+  const router = await WormholeRouterFactory.deploy(joinDomain, sdk.dai.address, join.address)
+
+  return { join, oracleAuth, router }
 }
