@@ -8,7 +8,7 @@ export default defineConfig({
       vow: '0xA950524441892A31ebddF91d3cEEFa04Bf454466',
       dai: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
       optimism: {
-        l1xDomainMessenger: '0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1',
+        xDomainMessenger: '0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1',
       },
     },
     optimism: {
