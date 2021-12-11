@@ -1,3 +1,6 @@
+export * from '../optimism/addresses'
 export * from './artifacts'
+export * from './gas'
 export * from './hadhat'
 export * from './numeric'
+export * from './txs'

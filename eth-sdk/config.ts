@@ -9,10 +9,14 @@ export default defineConfig({
       dai: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
       optimism: {
         xDomainMessenger: '0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1',
+        l1StandardBridge: '0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1',
       },
     },
     optimism: {
-      optimism: { xDomainMessenger: '0x4200000000000000000000000000000000000007' },
+      optimism: {
+        xDomainMessenger: '0x4200000000000000000000000000000000000007',
+        l2StandardBridge: '0x4200000000000000000000000000000000000010',
+      },
       dai: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
     },
   },

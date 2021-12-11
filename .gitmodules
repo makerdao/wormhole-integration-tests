@@ -6,6 +6,6 @@
 	url = git@github.com:makerdao/dss-wormhole.git
 [submodule "repos/optimism-monorepo"]
 	path = repos/optimism-monorepo
-	url = https://github.com/krzkaczor/optimism.git
+	url = https://github.com/ethereum-optimism/optimism.git
 	ignore = dirty
 
