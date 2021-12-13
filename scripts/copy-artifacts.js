@@ -47,5 +47,7 @@ if (!fs.existsSync(output)) {
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeJoin', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeConstantFee', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeOracleAuth', output)
+copyDappToolsArtifact(dappToolsArtifacts, 'WormholeRouter', output)
 copyHardhatArtifact(join(hardhatArtifacts, 'l1/L1DAIWormholeBridge.sol/L1DAIWormholeBridge.json'), output)
+copyHardhatArtifact(join(hardhatArtifacts, 'l1/L1Escrow.sol/L1Escrow.json'), output)
 copyHardhatArtifact(join(hardhatArtifacts, 'l2/L2DAIWormholeBridge.sol/L2DAIWormholeBridge.json'), output)
