@@ -1,9 +1,17 @@
-import { getMainnetSdk, getOptimismSdk } from '@dethcrypto/eth-sdk-client'
+import { getMainnetSdk, getOptimismSdk, MainnetSdk, OptimismSdk } from '@dethcrypto/eth-sdk-client'
+import { JsonRpcProvider } from '@ethersproject/providers'
 import { randomBytes } from '@ethersproject/random'
 import { expect } from 'chai'
-import { Wallet } from 'ethers'
+import { Signer, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
+import {
+  L1DAIWormholeBridge,
+  L2DAIWormholeBridge,
+  WormholeJoin,
+  WormholeOracleAuth,
+  WormholeRouter,
+} from '../typechain'
 import { getAttestations } from './attestations'
 import { deployBridges } from './bridge'
 import { formatWad, impersonateAccount, toEthersBigNumber, toRad, toRay, toWad } from './helpers'
@@ -27,19 +35,19 @@ const spot = toEthersBigNumber(toRay(1))
 const amt = toEthersBigNumber(toWad(10))
 
 describe('Wormhole', () => {
-  let l1Provider: any
-  let l2Provider: any
-  let l1User: any
-  let l2User: any
-  let l1Signer: any
-  let l2Signer: any
-  let l1WormholeBridge: any
-  let l2WormholeBridge: any
-  let oracleAuth: any
-  let join: any
-  let router: any
-  let mainnetSdk: any
-  let optimismSdk: any
+  let l1Provider: JsonRpcProvider
+  let l2Provider: JsonRpcProvider
+  let l1User: Signer
+  let l2User: Signer
+  let l1Signer: Signer
+  let l2Signer: Signer
+  let l1WormholeBridge: L1DAIWormholeBridge
+  let l2WormholeBridge: L2DAIWormholeBridge
+  let oracleAuth: WormholeOracleAuth
+  let join: WormholeJoin
+  let router: WormholeRouter
+  let mainnetSdk: MainnetSdk
+  let optimismSdk: OptimismSdk
 
   before(async () => {
     console.log('Running in forkmode')
@@ -59,7 +67,7 @@ describe('Wormhole', () => {
   })
 
   beforeEach(async () => {
-    const wh = await deployWormhole({
+    ;({ join, oracleAuth, router } = await deployWormhole({
       defaultSigner: l1Signer,
       sdk: mainnetSdk,
       ilk: bytes32('WH_' + Buffer.from(randomBytes(14)).toString('hex')), // appending a random id allows for multiple deployments in the same vat
@@ -70,21 +78,18 @@ describe('Wormhole', () => {
         [optimismDomain]: { line },
       },
       oracleAddresses: oracleWallets.map((or) => or.address),
-    })
-    ;({ join, oracleAuth, router } = wh)
-
-    const bridges = await deployBridges({
+    }))
+    ;({ l1WormholeBridge, l2WormholeBridge } = await deployBridges({
       domain: optimismDomain,
       mainnetSdk,
       optimismSdk,
       l1Signer,
       l2Signer,
       wormholeRouter: router.address,
-    })
-    ;({ l1WormholeBridge, l2WormholeBridge } = bridges)
+    }))
 
     console.log('Configuring router...')
-    await router['file(bytes32,bytes32,address)'](bytes32('bridge'), mainnetDomain, l1WormholeBridge.address)
+    await (router as any)['file(bytes32,bytes32,address)'](bytes32('bridge'), mainnetDomain, l1WormholeBridge.address)
   })
 
   describe('fast path', () => {
@@ -100,7 +105,9 @@ describe('Wormhole', () => {
       expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
       expect(await oracleAuth.isValid(signHash, signatures, oracleWallets.length)).to.be.true
       const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
+
       await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0)).wait()
+
       const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt))
     })
@@ -108,7 +115,6 @@ describe('Wormhole', () => {
     it('allows partial mints using oracle attestations when the amount withdrawn exceeds the maximum additional debt', async () => {
       const line = amt.div(2) // withdrawing an amount that is twice the debt ceiling
       await join['file(bytes32,bytes32,uint256)'](bytes32('line'), optimismDomain, line)
-
       const l2BalanceBeforeBurn = await optimismSdk.dai.balanceOf(userAddress)
       const tx = await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
       const { signatures, wormholeGUID } = await getAttestations(
@@ -118,9 +124,10 @@ describe('Wormhole', () => {
       )
       const l2BalanceAfterBurn = await optimismSdk.dai.balanceOf(userAddress)
       expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
-
       const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
-      await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0)).wait()
+
+      await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0)).wait() // mint maximum possible
+
       const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(line)) // only half the requested amount was minted (minted=line-debt=line)
 
@@ -131,6 +138,7 @@ describe('Wormhole', () => {
       await (await join.connect(l1Signer).settle(optimismDomain, line)).wait()
 
       await (await join.connect(l1User).withdrawPending(wormholeGUID, 0)).wait() // mint leftover amount
+
       const l1BalanceAfterWithdraw = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterWithdraw).to.be.eq(l1BalanceBeforeMint.add(amt)) // the full amount has now been minted
     })
@@ -142,6 +150,8 @@ describe('Wormhole', () => {
         l2WormholeBridge.interface,
         oracleWallets,
       )
+
+      // Signatures in bad order
       const reversedSigs = `0x${signatures
         .slice(2)
         .match(/.{130}/g)
@@ -149,8 +159,10 @@ describe('Wormhole', () => {
         .join('')}`
       let reason = 'WormholeOracleAuth/bad-sig-order'
       await expect(oracleAuth.isValid(signHash, reversedSigs, oracleWallets.length)).to.be.revertedWith(reason)
+
       await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, reversedSigs, 0)).to.be.revertedWith(reason)
 
+      // Some signatures missing
       const tooFewSigs = `0x${signatures
         .slice(2)
         .match(/.{130}/g)
@@ -158,8 +170,10 @@ describe('Wormhole', () => {
         .join('')}`
       reason = 'WormholeOracleAuth/not-enough-sig'
       await expect(oracleAuth.isValid(signHash, tooFewSigs, oracleWallets.length)).to.be.revertedWith(reason)
+
       await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, tooFewSigs, 0)).to.be.revertedWith(reason)
 
+      // Some signatures invalid
       const badVSigs = `0x${signatures
         .slice(2)
         .match(/.{130}/g)
@@ -167,6 +181,7 @@ describe('Wormhole', () => {
         .join('')}`
       reason = 'WormholeOracleAuth/bad-v'
       await expect(oracleAuth.isValid(signHash, badVSigs, oracleWallets.length)).to.be.revertedWith(reason)
+
       await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, badVSigs, 0)).to.be.revertedWith(reason)
     })
 
@@ -175,6 +190,7 @@ describe('Wormhole', () => {
         await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
       ).wait()
       const { signatures, wormholeGUID } = await getAttestations(txReceipt, l2WormholeBridge.interface, oracleWallets)
+
       await expect(oracleAuth.connect(l1Signer).requestMint(wormholeGUID, signatures, 0)).to.be.revertedWith(
         'WormholeOracleAuth/not-operator',
       )
