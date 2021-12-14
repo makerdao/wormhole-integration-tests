@@ -55,7 +55,7 @@ jobs:
 
       - run: yarn
       - run: ./scripts/build-infra.sh
-      - run: ./scripts/run-infra.sh
+      - run: ./scripts/run-infra.sh&
       - run: sleep 60 # give it some time to initialize
 
       - run: yarn test
