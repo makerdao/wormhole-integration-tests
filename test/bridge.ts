@@ -64,7 +64,7 @@ export async function deployBaseBridge(opts: BaseBridgeDeployOpts) {
   const l1Escrow = Wallet.createRandom().connect(l1Provider)
   await mintEther(l1Escrow.address, l1Provider)
 
-  const l2Dai = await deployUsingFactory(opts.l2Signer, getContractFactory<Dai__factory>('dai', opts.l2Signer), [])
+  const l2Dai = await deployUsingFactory(opts.l2Signer, getContractFactory<Dai__factory>('Dai', opts.l2Signer), [])
 
   const futureL1DAITokenBridgeAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
   const l2DaiTokenBridge = await deployUsingFactory(
