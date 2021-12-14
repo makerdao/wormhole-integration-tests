@@ -1,8 +1,9 @@
-import { MainnetSdk, OptimismSdk } from '@dethcrypto/eth-sdk-client'
+import { MainnetSdk } from '@dethcrypto/eth-sdk-client'
 import { expect } from 'chai'
 import { constants, ethers, Signer, Wallet } from 'ethers'
 
 import {
+  Dai,
   Dai__factory,
   L1DAITokenBridge__factory,
   L1DAIWormholeBridge__factory,
@@ -17,39 +18,48 @@ interface BridgeDeployOpts {
   l1Signer: Signer
   l2Signer: Signer
   mainnetSdk: MainnetSdk
-  optimismSdk: OptimismSdk
+  optimismAddresses: OptimismAddresses
   domain: string
+  wormholeRouter: string
+  l1EscrowAddress: string
+  l2Dai: Dai
 }
 
 export async function deployBridge(opts: BridgeDeployOpts) {
   const futureL1WormholeBridgeAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
   const L2WormholeBridgeFactory = getContractFactory<L2DAIWormholeBridge__factory>('L2DAIWormholeBridge', opts.l2Signer)
   const l2WormholeBridge = await deployUsingFactory(opts.l2Signer, L2WormholeBridgeFactory, [
-    opts.optimismSdk.optimism.xDomainMessenger.address,
-    opts.optimismSdk.dai.address,
+    opts.optimismAddresses.l2.xDomainMessenger,
+    opts.l2Dai.address,
     opts.mainnetSdk.dai.address,
     futureL1WormholeBridgeAddress,
     opts.domain,
   ])
   // wormhole bridge has to have burn rights
-  await opts.optimismSdk.dai.rely(l2WormholeBridge.address)
+  await opts.l2Dai.rely(l2WormholeBridge.address)
 
-  const L1WormholeBridgeFactory = getContractFactory<L1DAIWormholeBridge__factory>('L1DAIWormholeBridge', opts.l1Signer)
-  const l1WormholeBridge = await deployUsingFactory(opts.l2Signer, L1WormholeBridgeFactory, [
+  const L1WormholeBridgeFactory = getContractFactory<L1DAIWormholeBridge__factory>('L1DAIWormholeBridge')
+  const l1WormholeBridge = await deployUsingFactory(opts.l1Signer, L1WormholeBridgeFactory, [
     opts.mainnetSdk.dai.address,
     l2WormholeBridge.address,
-    opts.optimismSdk.dai.address,
-
-    opts.optimismSdk.optimism.xDomainMessenger.address,
-    futureL1WormholeBridgeAddress,
-    opts.domain,
+    opts.l2Dai.address,
+    opts.optimismAddresses.l2.xDomainMessenger,
+    opts.l1EscrowAddress,
+    opts.wormholeRouter,
   ])
   expect(l1WormholeBridge.address).to.be.eq(futureL1WormholeBridgeAddress, 'Future address doesnt match actual address')
 
   return { l2WormholeBridge, l1WormholeBridge }
 }
 
-export async function deployBaseBridge(opts: BridgeDeployOpts, addresses: OptimismAddresses) {
+interface BaseBridgeDeployOpts {
+  l1Signer: Signer
+  l2Signer: Signer
+  mainnetSdk: MainnetSdk
+  optimismAddresses: OptimismAddresses
+}
+
+export async function deployBaseBridge(opts: BaseBridgeDeployOpts) {
   const l1Provider = opts.l1Signer.provider! as ethers.providers.JsonRpcProvider
   const l1Escrow = Wallet.createRandom().connect(l1Provider)
   await mintEther(l1Escrow.address, l1Provider)
@@ -60,7 +70,12 @@ export async function deployBaseBridge(opts: BridgeDeployOpts, addresses: Optimi
   const l2DaiTokenBridge = await deployUsingFactory(
     opts.l2Signer,
     getContractFactory<L2DAITokenBridge__factory>('L2DAITokenBridge'),
-    [addresses.l2.xDomainMessenger, l2Dai.address, opts.mainnetSdk.dai.address, futureL1DAITokenBridgeAddress],
+    [
+      opts.optimismAddresses.l2.xDomainMessenger,
+      l2Dai.address,
+      opts.mainnetSdk.dai.address,
+      futureL1DAITokenBridgeAddress,
+    ],
   )
   await waitForTx(l2Dai.rely(l2DaiTokenBridge.address))
 
@@ -71,7 +86,7 @@ export async function deployBaseBridge(opts: BridgeDeployOpts, addresses: Optimi
       opts.mainnetSdk.dai.address,
       l2DaiTokenBridge.address,
       l2Dai.address,
-      addresses.l1.xDomainMessenger,
+      opts.optimismAddresses.l1.xDomainMessenger,
       await l1Escrow.getAddress(),
     ],
   )

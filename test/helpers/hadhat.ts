@@ -19,7 +19,7 @@ export async function impersonateAccount(
 export async function mintEther(
   address: string,
   provider: ethers.providers.JsonRpcProvider = hre.ethers.provider,
-  amt: AnyNumber = toWad(100)
+  amt: AnyNumber = toWad(100),
 ): Promise<void> {
-  await provider.send('hardhat_setBalance', [address, "0x"+toMyBigNumber(amt).toString(16)])
+  await provider.send('hardhat_setBalance', [address, '0x' + toMyBigNumber(amt).toString(16)])
 }

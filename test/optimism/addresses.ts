@@ -1,7 +1,6 @@
 import fetch from 'node-fetch'
 import { assert } from 'ts-essentials'
 
-
 export async function getOptimismAddresses() {
   const addresses = await (await fetch('http://localhost:8080/addresses.json')).json()
 

@@ -41,7 +41,7 @@ export function makeRelayMessagesToL1(watcher: Watcher, l1Signer: Signer, optimi
     relayMessagesToL1(watcher, l1Signer, optimismAddresses, l2OriginatingTx)
 }
 
-export type RelayMessagesToL1 = ReturnType<typeof relayMessagesToL1>
+export type RelayMessagesToL1 = ReturnType<typeof makeRelayMessagesToL1>
 
 export async function relayMessages(l1Deployer: Signer, l2TxHash: string, optimismAddresses: OptimismAddresses) {
   const messagePairs = await retry(
