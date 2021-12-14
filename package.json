@@ -13,8 +13,7 @@
     "typecheck": "tsc --noEmit --incremental false --composite false",
     "clean": "hardhat clean",
     "test": "hardhat test",
-    "test:fix": "yarn lint:fix && yarn format:fix && yarn test && yarn typecheck",
-    "node:l2": "L2=true hardhat node --port 9585"
+    "test:fix": "yarn lint:fix && yarn format:fix && yarn test && yarn typecheck"
   },
   "dependencies": {
     "hardhat": "^2.6.8"

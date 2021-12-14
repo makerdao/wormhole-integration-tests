@@ -53,8 +53,10 @@ jobs:
       - run: yarn format
       - run: yarn build
 
-      - run: yarn node:l2&
-      - run: sleep 2 # give it some time to initialize
+      - run: yarn
+      - run: ./scripts/build-infra.sh
+      - run: ./scripts/run-infra.sh
+      - run: sleep 60 # give it some time to initialize
 
       - run: yarn test
       - run: yarn typecheck
