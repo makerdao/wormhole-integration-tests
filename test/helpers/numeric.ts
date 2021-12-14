@@ -1,5 +1,5 @@
 import { BigNumber } from 'bignumber.js'
-import { BigNumber as EthersBigNumber } from 'ethers'
+import { BigNumber as EthersBigNumber } from 'ethers' // no arbitrary-precision
 
 // we want to avoid using scientific notation as it's incompatible with ethers.js
 // as described in: https://github.com/MikeMcl/bignumber.js/issues/209#issuecomment-447066547

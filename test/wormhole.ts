@@ -13,7 +13,7 @@ import {
   WormholeRouter,
   WormholeRouter__factory,
 } from '../typechain'
-import { getContractFactory } from './helpers'
+import { getContractFactory, impersonateAccount } from './helpers'
 
 const bytes32 = ethers.utils.formatBytes32String
 
@@ -41,10 +41,11 @@ export async function deployWormhole({
   console.log('WormholeJoin deployed at: ', join.address)
 
   console.log('Configuring vat...')
-  await sdk.vat.rely(join.address)
-  await sdk.vat.init(ilk)
-  await sdk.vat['file(bytes32,bytes32,uint256)'](ilk, bytes32('spot'), spot)
-  await sdk.vat['file(bytes32,bytes32,uint256)'](ilk, bytes32('line'), line)
+  const makerGovernanceImpersonator = await impersonateAccount(sdk.pause_proxy.address, defaultSigner.provider! as any)
+  await sdk.vat.connect(makerGovernanceImpersonator).rely(join.address)
+  await sdk.vat.connect(makerGovernanceImpersonator).init(ilk)
+  await sdk.vat.connect(makerGovernanceImpersonator)['file(bytes32,bytes32,uint256)'](ilk, bytes32('spot'), spot)
+  await sdk.vat.connect(makerGovernanceImpersonator)['file(bytes32,bytes32,uint256)'](ilk, bytes32('line'), line)
 
   console.log('Configuring join...')
   await join['file(bytes32,address)'](bytes32('vow'), sdk.vow.address)
