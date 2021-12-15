@@ -31,7 +31,6 @@ export async function deployBridge(opts: BridgeDeployOpts) {
   const l2WormholeBridge = await deployUsingFactory(opts.l2Signer, L2WormholeBridgeFactory, [
     opts.optimismAddresses.l2.xDomainMessenger,
     opts.l2Dai.address,
-    opts.mainnetSdk.dai.address,
     futureL1WormholeBridgeAddress,
     opts.domain,
   ])
@@ -42,7 +41,6 @@ export async function deployBridge(opts: BridgeDeployOpts) {
   const l1WormholeBridge = await deployUsingFactory(opts.l1Signer, L1WormholeBridgeFactory, [
     opts.mainnetSdk.dai.address,
     l2WormholeBridge.address,
-    opts.l2Dai.address,
     opts.optimismAddresses.l2.xDomainMessenger,
     opts.l1EscrowAddress,
     opts.wormholeRouter,
