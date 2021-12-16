@@ -1,9 +1,9 @@
 import { getContractDefinition } from '@eth-optimism/contracts'
 import { Watcher } from '@eth-optimism/core-utils'
 import { getMessagesAndProofsForL2Transaction } from '@eth-optimism/message-relayer'
-import { Contract, ContractTransaction, ethers, Signer } from 'ethers'
+import { Contract, ContractTransaction, ethers, providers, Signer } from 'ethers'
 
-import { OptimismAddresses } from '../helpers'
+import { OptimismAddresses, waitForTx } from '../helpers'
 
 export async function waitToRelayTxsToL2(l1OriginatingTx: Promise<ContractTransaction>, watcher: Watcher) {
   const res = await l1OriginatingTx
@@ -32,8 +32,13 @@ export async function relayMessagesToL1(
   const [l2ToL1XDomainMsgHash] = await watcher.getMessageHashesFromL2Tx(res.hash)
   console.log(`Found cross-domain message ${l2ToL1XDomainMsgHash} in L2 tx.  Waiting for relay to L1...`)
 
-  await relayMessages(l1Signer, res.hash, optimismAddresses)
+  const l1RelayMessage = await relayMessages(l1Signer, res.hash, optimismAddresses)
   await watcher.getL1TransactionReceipt(l2ToL1XDomainMsgHash)
+
+  return {
+    l1RelayMessage,
+    l2OriginatingTx,
+  }
 }
 
 export function makeRelayMessagesToL1(watcher: Watcher, l1Signer: Signer, optimismAddresses: OptimismAddresses) {
@@ -43,7 +48,11 @@ export function makeRelayMessagesToL1(watcher: Watcher, l1Signer: Signer, optimi
 
 export type RelayMessagesToL1 = ReturnType<typeof makeRelayMessagesToL1>
 
-export async function relayMessages(l1Deployer: Signer, l2TxHash: string, optimismAddresses: OptimismAddresses) {
+export async function relayMessages(
+  l1Signer: Signer,
+  l2TxHash: string,
+  optimismAddresses: OptimismAddresses,
+): Promise<providers.TransactionReceipt[]> {
   const messagePairs = await retry(
     () =>
       getMessagesAndProofsForL2Transaction(
@@ -55,15 +64,23 @@ export async function relayMessages(l1Deployer: Signer, l2TxHash: string, optimi
       ),
     15,
   )
+
   const l1XdomainMessenger = new Contract(
     optimismAddresses.l1.xDomainMessenger,
     getContractDefinition('L1CrossDomainMessenger').abi,
-    l1Deployer,
+    l1Signer,
   )
+  const txs: providers.TransactionReceipt[] = []
   for (const { message, proof } of messagePairs) {
     console.log('Relaying  L2 -> L1 message...')
-    await l1XdomainMessenger.relayMessage(message.target, message.sender, message.message, message.messageNonce, proof)
+    txs.push(
+      await waitForTx(
+        l1XdomainMessenger.relayMessage(message.target, message.sender, message.message, message.messageNonce, proof),
+      ),
+    )
   }
+
+  return txs
 }
 
 function delay(duration: number) {
