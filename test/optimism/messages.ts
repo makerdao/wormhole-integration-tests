@@ -73,14 +73,30 @@ export async function relayMessages(
   const txs: providers.TransactionReceipt[] = []
   for (const { message, proof } of messagePairs) {
     console.log('Relaying  L2 -> L1 message...')
-    txs.push(
-      await waitForTx(
-        l1XdomainMessenger.relayMessage(message.target, message.sender, message.message, message.messageNonce, proof),
-      ),
+    const tx = await waitForTx(
+      l1XdomainMessenger.relayMessage(message.target, message.sender, message.message, message.messageNonce, proof),
     )
+
+    // xchain relayer won't revert but will emit an event in case of revert
+    for (const log of tx.logs) {
+      const parsed = tryOrDefault(() => l1XdomainMessenger.interface.parseLog(log), undefined)
+      if (parsed && parsed.name === 'FailedRelayedMessage') {
+        throw new Error(`Failed to relay message! ${JSON.stringify(parsed)}`)
+      }
+    }
+
+    txs.push(tx)
   }
 
   return txs
+}
+
+function tryOrDefault<T, K>(fn: () => T, defaultValue: K): T | K {
+  try {
+    return fn()
+  } catch {
+    return defaultValue
+  }
 }
 
 function delay(duration: number) {
