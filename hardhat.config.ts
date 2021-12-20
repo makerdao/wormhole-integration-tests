@@ -10,12 +10,13 @@ dotenv.config()
 const config: HardhatUserConfig = {
   solidity: '0.8.9',
   networks: {
+    // we don't use default network so this should make it unusable to prevent any accidental use
     defaultNetwork: {
       url: '',
     },
   },
   mocha: {
-    timeout: 120_000,
+    timeout: 300_000,
   },
 }
 

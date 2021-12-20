@@ -252,4 +252,29 @@ describe('Wormhole', () => {
       )
     })
   })
+
+  describe('slow path', () => {
+    it('mints DAI without oracles', async () => {
+      const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
+      const tx = await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
+      const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
+      expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
+
+      const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
+      const { l1RelayMessages } = await relayMessagesToL1(tx)
+      expect(l1RelayMessages.length).to.be.eq(1)
+
+      const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
+      expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt))
+    })
+  })
+
+  describe('flush', () => {
+    it('pays back debt')
+    it("can't flush not-configured domain")
+  })
+
+  describe('bad debt', () => {
+    it('governance pushed bad debt')
+  })
 })
