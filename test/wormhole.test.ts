@@ -262,7 +262,7 @@ describe('Wormhole', () => {
       expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
 
       const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
-      const { l1RelayMessages } = await relayMessagesToL1(tx)
+      const l1RelayMessages = await relayMessagesToL1(tx)
       expect(l1RelayMessages.length).to.be.eq(1)
 
       const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)

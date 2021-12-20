@@ -32,10 +32,7 @@ export async function relayMessagesToL1(
   const l1RelayMessages = await relayMessages(l1Signer, txHash, optimismAddresses)
   await watcher.getL1TransactionReceipt(l2ToL1XDomainMsgHash)
 
-  return {
-    l1RelayMessages,
-    l2OriginatingTx,
-  }
+  return l1RelayMessages
 }
 
 async function waitAndGetTxHash(tx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt) {
