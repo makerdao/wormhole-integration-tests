@@ -2,7 +2,7 @@
   "name": "tests",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "scripts": {
     "build": "hardhat compile",
     "typechain": "typechain --target ethers-v5 --out-dir ./typechain 'external-artifacts/*.json'",
