@@ -16,12 +16,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-        # with:
-        # ssh-key: ${{ secrets.SSH_KEY }} # deploy key with access to dss-wormhole
-        # submodules: true
-      - uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
+        submodules: true
       - run: git submodule update --init --recursive
       - uses: actions/setup-node@v1
         with:
