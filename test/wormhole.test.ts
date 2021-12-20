@@ -128,7 +128,8 @@ describe('Wormhole', () => {
     }))
 
     console.log('Configuring router...')
-    await (router as any)['file(bytes32,bytes32,address)'](bytes32('bridge'), optimismDomain, l1WormholeBridge.address)
+    await waitForTx(router.file(bytes32('gateway'), optimismDomain, l1WormholeBridge.address))
+    await waitForTx(l2WormholeBridge.file(bytes32('validDomains'), mainnetDomain, 1))
 
     console.log('Moving some DAI to L2')
     await mainnetSdk.dai.connect(l1User).approve(baseBridge.l1DaiTokenBridge.address, amt)
