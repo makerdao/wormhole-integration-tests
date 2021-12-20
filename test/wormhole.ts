@@ -65,7 +65,9 @@ export async function deployWormhole({
 
   console.log('Deploying router...')
   const WormholeRouterFactory = getContractFactory<WormholeRouter__factory>('WormholeRouter', defaultSigner)
-  const router = await WormholeRouterFactory.deploy(joinDomain, sdk.dai.address, join.address)
+  const router = await WormholeRouterFactory.deploy(sdk.dai.address)
+  await router.file(bytes32('gateway'), joinDomain, join.address)
+  await join.rely(router.address)
 
   return { join, oracleAuth, router }
 }

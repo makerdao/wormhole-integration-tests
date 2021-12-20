@@ -16,10 +16,6 @@ yarn
 yarn build
 cd ..
 
-echo "Setting up optimism monorepo"
-cp -f ../scripts/envs/l1_chain.env ./optimism-monorepo/ops/envs/l1_chain.env
-cp -f ../scripts/envs/dtl.env ./optimism-monorepo/ops/envs/dtl.env
-
 cd ..
 
 echo "Setting up ./tests dir"

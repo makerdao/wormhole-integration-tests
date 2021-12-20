@@ -21,7 +21,7 @@ interface BridgeDeployOpts {
   optimismAddresses: OptimismAddresses
   domain: string
   wormholeRouter: string
-  l1EscrowAddress: string
+  l1Escrow: Wallet
   l2Dai: Dai
 }
 
@@ -41,11 +41,12 @@ export async function deployBridge(opts: BridgeDeployOpts) {
   const l1WormholeBridge = await deployUsingFactory(opts.l1Signer, L1WormholeBridgeFactory, [
     opts.mainnetSdk.dai.address,
     l2WormholeBridge.address,
-    opts.optimismAddresses.l2.xDomainMessenger,
-    opts.l1EscrowAddress,
+    opts.optimismAddresses.l1.xDomainMessenger,
+    opts.l1Escrow.address,
     opts.wormholeRouter,
   ])
   expect(l1WormholeBridge.address).to.be.eq(futureL1WormholeBridgeAddress, 'Future address doesnt match actual address')
+  await opts.mainnetSdk.dai.connect(opts.l1Escrow).approve(l1WormholeBridge.address, constants.MaxUint256)
 
   return { l2WormholeBridge, l1WormholeBridge }
 }
@@ -90,6 +91,7 @@ export async function deployBaseBridge(opts: BaseBridgeDeployOpts) {
   )
   expect(l1DaiTokenBridge.address).to.be.eq(futureL1DAITokenBridgeAddress, 'Future address doesnt match actual address')
 
+  // bridge has to be approved on escrow because settling moves tokens
   await opts.mainnetSdk.dai.connect(l1Escrow).approve(l1DaiTokenBridge.address, constants.MaxUint256)
 
   return {

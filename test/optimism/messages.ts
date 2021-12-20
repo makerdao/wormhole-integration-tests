@@ -1,9 +1,9 @@
 import { getContractDefinition } from '@eth-optimism/contracts'
 import { Watcher } from '@eth-optimism/core-utils'
 import { getMessagesAndProofsForL2Transaction } from '@eth-optimism/message-relayer'
-import { Contract, ContractTransaction, ethers, Signer } from 'ethers'
+import { Contract, ContractReceipt, ContractTransaction, ethers, providers, Signer } from 'ethers'
 
-import { OptimismAddresses } from '../helpers'
+import { OptimismAddresses, waitForTx } from '../helpers'
 
 export async function waitToRelayTxsToL2(l1OriginatingTx: Promise<ContractTransaction>, watcher: Watcher) {
   const res = await l1OriginatingTx
@@ -23,27 +23,36 @@ export async function relayMessagesToL1(
   watcher: Watcher,
   l1Signer: Signer,
   optimismAddresses: OptimismAddresses,
-  l2OriginatingTx: Promise<ContractTransaction>,
+  l2OriginatingTx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt,
 ) {
-  console.log('Using watcher to wait for L2->L1 relay...')
-  const res = await l2OriginatingTx
-  await res.wait()
-
-  const [l2ToL1XDomainMsgHash] = await watcher.getMessageHashesFromL2Tx(res.hash)
+  const txHash = await waitAndGetTxHash(l2OriginatingTx)
+  const [l2ToL1XDomainMsgHash] = await watcher.getMessageHashesFromL2Tx(txHash)
   console.log(`Found cross-domain message ${l2ToL1XDomainMsgHash} in L2 tx.  Waiting for relay to L1...`)
 
-  await relayMessages(l1Signer, res.hash, optimismAddresses)
+  const l1RelayMessages = await relayMessages(l1Signer, txHash, optimismAddresses)
   await watcher.getL1TransactionReceipt(l2ToL1XDomainMsgHash)
+
+  return l1RelayMessages
+}
+
+async function waitAndGetTxHash(tx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt) {
+  const res: any = await tx
+  await res.wait()
+  return res.hash
 }
 
 export function makeRelayMessagesToL1(watcher: Watcher, l1Signer: Signer, optimismAddresses: OptimismAddresses) {
-  return (l2OriginatingTx: Promise<ContractTransaction>) =>
+  return (l2OriginatingTx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt) =>
     relayMessagesToL1(watcher, l1Signer, optimismAddresses, l2OriginatingTx)
 }
 
 export type RelayMessagesToL1 = ReturnType<typeof makeRelayMessagesToL1>
 
-export async function relayMessages(l1Deployer: Signer, l2TxHash: string, optimismAddresses: OptimismAddresses) {
+export async function relayMessages(
+  l1Signer: Signer,
+  l2TxHash: string,
+  optimismAddresses: OptimismAddresses,
+): Promise<providers.TransactionReceipt[]> {
   const messagePairs = await retry(
     () =>
       getMessagesAndProofsForL2Transaction(
@@ -55,14 +64,38 @@ export async function relayMessages(l1Deployer: Signer, l2TxHash: string, optimi
       ),
     15,
   )
+
   const l1XdomainMessenger = new Contract(
     optimismAddresses.l1.xDomainMessenger,
     getContractDefinition('L1CrossDomainMessenger').abi,
-    l1Deployer,
+    l1Signer,
   )
+  const txs: providers.TransactionReceipt[] = []
   for (const { message, proof } of messagePairs) {
     console.log('Relaying  L2 -> L1 message...')
-    await l1XdomainMessenger.relayMessage(message.target, message.sender, message.message, message.messageNonce, proof)
+    const tx = await waitForTx(
+      l1XdomainMessenger.relayMessage(message.target, message.sender, message.message, message.messageNonce, proof),
+    )
+
+    // xchain relayer won't revert but will emit an event in case of revert
+    for (const log of tx.logs) {
+      const parsed = tryOrDefault(() => l1XdomainMessenger.interface.parseLog(log), undefined)
+      if (parsed && parsed.name === 'FailedRelayedMessage') {
+        throw new Error(`Failed to relay message! ${JSON.stringify(parsed)}`)
+      }
+    }
+
+    txs.push(tx)
+  }
+
+  return txs
+}
+
+function tryOrDefault<T, K>(fn: () => T, defaultValue: K): T | K {
+  try {
+    return fn()
+  } catch {
+    return defaultValue
   }
 }
 

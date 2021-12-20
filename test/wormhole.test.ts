@@ -26,13 +26,16 @@ import {
   toRad,
   toRay,
   toWad,
+  waitForTx,
 } from './helpers'
 import {
   defaultL2Data,
   defaultL2Gas,
+  makeRelayMessagesToL1,
   makeWaitToRelayTxsToL2,
   makeWatcher,
   mintL2Ether,
+  RelayMessagesToL1,
   WaitToRelayTxsToL2,
 } from './optimism'
 import { deployWormhole } from './wormhole'
@@ -50,13 +53,11 @@ const spot = toEthersBigNumber(toRay(1))
 const amt = toEthersBigNumber(toWad(10))
 
 describe('Wormhole', () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let l1Provider: JsonRpcProvider
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let l2Provider: JsonRpcProvider
   let watcher: Watcher
   let waitToRelayTxsToL2: WaitToRelayTxsToL2
-  // let relayMessagesToL1: RelayMessagesToL1
+  let relayMessagesToL1: RelayMessagesToL1
   let l1User: Wallet
   let l2User: Wallet
   let userAddress: string // both l1 and l2 user should have the same address
@@ -73,9 +74,9 @@ describe('Wormhole', () => {
   let l1Escrow: Wallet
 
   before(async () => {
-    const l1Provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:9545')
+    l1Provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:9545')
     l1Signer = Wallet.createRandom().connect(l1Provider)
-    const l2Provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
+    l2Provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
     l2Signer = l1Signer.connect(l2Provider)
 
     console.log('Current L1 block: ', (await l1Provider.getBlockNumber()).toString())
@@ -86,7 +87,7 @@ describe('Wormhole', () => {
 
     watcher = makeWatcher(l1Provider, l2Provider, optimismAddresses)
     waitToRelayTxsToL2 = makeWaitToRelayTxsToL2(watcher)
-    // relayMessagesToL1 = makeRelayMessagesToL1(watcher, l1Signer, optimismAddresses)
+    relayMessagesToL1 = makeRelayMessagesToL1(watcher, l1Signer, optimismAddresses)
 
     await mintEther(l1Signer.address, l1Provider)
     await mintL2Ether(waitToRelayTxsToL2, mainnetSdk, optimismAddresses, l1Provider, l2Signer.address)
@@ -97,7 +98,6 @@ describe('Wormhole', () => {
     await mintEther(l1User.address, l1Provider)
     await mintL2Ether(waitToRelayTxsToL2, mainnetSdk, optimismAddresses, l1Provider, userAddress)
     await mintDai(mainnetSdk, l1User.address, toEthersBigNumber(toWad(20_000)))
-    console.log('L1 DAI balance: ', formatWad(await mainnetSdk.dai.balanceOf(userAddress)))
   })
 
   beforeEach(async () => {
@@ -123,12 +123,13 @@ describe('Wormhole', () => {
       l1Signer,
       l2Signer,
       wormholeRouter: router.address,
-      l1EscrowAddress: l1Escrow.address,
+      l1Escrow,
       l2Dai,
     }))
 
     console.log('Configuring router...')
-    await (router as any)['file(bytes32,bytes32,address)'](bytes32('bridge'), mainnetDomain, l1WormholeBridge.address)
+    await waitForTx(router.file(bytes32('gateway'), optimismDomain, l1WormholeBridge.address))
+    await waitForTx(l2WormholeBridge.file(bytes32('validDomains'), mainnetDomain, 1))
 
     console.log('Moving some DAI to L2')
     await mainnetSdk.dai.connect(l1User).approve(baseBridge.l1DaiTokenBridge.address, amt)
@@ -179,12 +180,21 @@ describe('Wormhole', () => {
       const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(line)) // only half the requested amount was minted (minted=line-debt=line)
 
-      // hack to settle the join without going through the L1 bridge -- note: this is normally done via an L2 -> L1 crosschain message
-      await l2WormholeBridge.connect(l2User).flush(optimismDomain)
-      await (await mainnetSdk.dai.connect(l1Escrow).transfer(join.address, line)).wait()
-      await (await join.connect(l1Signer).settle(optimismDomain, line)).wait()
+      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(amt)
+      const escrowedDaiBeforeFlush = await mainnetSdk.dai.balanceOf(l1Escrow.address)
+      expect(escrowedDaiBeforeFlush).to.equal(amt)
+      // Withdraw L2 DAI and pay back debt
+      // Usually relaying this message would take 7 days
+      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain))
 
-      await (await join.connect(l1User).withdrawPending(wormholeGUID, 0)).wait() // mint leftover amount
+      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(0)
+      const escrowedDaiAfterFlush = await mainnetSdk.dai.balanceOf(l1Escrow.address)
+      expect(escrowedDaiAfterFlush).to.equal(0)
+
+      expect(await mainnetSdk.dai.balanceOf(router.address)).to.be.eq(0)
+      expect(await mainnetSdk.dai.balanceOf(join.address)).to.be.eq(0)
+
+      await waitForTx(join.connect(l1User).withdrawPending(wormholeGUID, 0)) // mint leftover amount
 
       const l1BalanceAfterWithdraw = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterWithdraw).to.be.eq(l1BalanceBeforeMint.add(amt)) // the full amount has now been minted
@@ -242,5 +252,30 @@ describe('Wormhole', () => {
         'WormholeOracleAuth/not-operator',
       )
     })
+  })
+
+  describe('slow path', () => {
+    it('mints DAI without oracles', async () => {
+      const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
+      const tx = await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
+      const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
+      expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
+
+      const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
+      const l1RelayMessages = await relayMessagesToL1(tx)
+      expect(l1RelayMessages.length).to.be.eq(1)
+
+      const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
+      expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt))
+    })
+  })
+
+  describe('flush', () => {
+    it('pays back debt')
+    it("can't flush not-configured domain")
+  })
+
+  describe('bad debt', () => {
+    it('governance pushed bad debt')
   })
 })
