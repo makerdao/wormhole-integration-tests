@@ -194,7 +194,7 @@ describe('Wormhole', () => {
       expect(await mainnetSdk.dai.balanceOf(router.address)).to.be.eq(0)
       expect(await mainnetSdk.dai.balanceOf(join.address)).to.be.eq(0)
 
-      await waitForTx(join.connect(l1User).withdrawPending(wormholeGUID, 0)) // mint leftover amount
+      await waitForTx(join.connect(l1User).mintPending(wormholeGUID, 0)) // mint leftover amount
 
       const l1BalanceAfterWithdraw = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterWithdraw).to.be.eq(l1BalanceBeforeMint.add(amt)) // the full amount has now been minted
