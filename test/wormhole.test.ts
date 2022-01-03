@@ -278,4 +278,8 @@ describe('Wormhole', () => {
   describe('bad debt', () => {
     it('governance pushed bad debt')
   })
+
+  describe('emergency shutdown', () => {
+    it('allows to retrieve DAI from open wormholes')
+  })
 })
