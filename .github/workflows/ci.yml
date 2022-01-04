@@ -52,8 +52,7 @@ jobs:
       - run: yarn
       - run: ./scripts/build-infra.sh
       - run: ./scripts/run-infra.sh&
-      - run: ./.github/workflows/wait-for-it.sh -h localhost -p 9545 -t 120 # wait for l1
-      - run: ./.github/workflows/wait-for-it.sh -h localhost -p 8545 -t 120 # wait for l2
+      - run: yarn ts-node ./scripts/ensure-infra-up.ts
       - run: sleep 60 # give it some time to initialize
 
       - run: yarn test

@@ -4,6 +4,7 @@ import { getMessagesAndProofsForL2Transaction } from '@eth-optimism/message-rela
 import { Contract, ContractReceipt, ContractTransaction, ethers, providers, Signer } from 'ethers'
 
 import { OptimismAddresses, waitForTx } from '../helpers'
+import { retry } from '../helpers/async'
 
 export async function waitToRelayTxsToL2(l1OriginatingTx: Promise<ContractTransaction>, watcher: Watcher) {
   const res = await l1OriginatingTx
@@ -97,30 +98,6 @@ function tryOrDefault<T, K>(fn: () => T, defaultValue: K): T | K {
   } catch {
     return defaultValue
   }
-}
-
-function delay(duration: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, duration))
-}
-
-async function retry<T>(fn: () => Promise<T>, maxRetries: number = 5): Promise<T> {
-  const sleepBetweenRetries = 1000
-  let retryCount = 0
-
-  do {
-    try {
-      return await fn()
-    } catch (error) {
-      const isLastAttempt = retryCount === maxRetries
-      if (isLastAttempt) {
-        throw error
-      }
-      console.log('retry...')
-    }
-    await delay(sleepBetweenRetries)
-  } while (retryCount++ < maxRetries)
-
-  throw new Error('Unreachable')
 }
 
 export function makeWatcher(
