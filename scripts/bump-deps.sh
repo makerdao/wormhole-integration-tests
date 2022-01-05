@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 cd "$(dirname "$0")"
+
+# git submodule update --init --recursive
 
 cd ../repos/
 
 cd dss-wormhole
-git pull
+git pull origin master
 cd ..
 
 cd optimism-dai-bridge
-git pull
+git pull origin kk/wormhole-bridge
 cd ..
 
 echo "Dependencies bumped..."

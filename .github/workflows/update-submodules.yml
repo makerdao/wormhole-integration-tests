@@ -4,7 +4,8 @@ on:
   #schedule:
   #  # * is a special character in YAML so you have to quote this string
   #  - cron:  '0 12 * * *'
-  workflow_dispatch:
+  # workflow_dispatch:
+  pull_request:
 
 jobs:
   submodule_update:
@@ -16,16 +17,14 @@ jobs:
         with:
           submodules: true
 
-      # Update references
       - name: Git Submodule Update
         run: |
-          git pull --recurse-submodules
-          git submodule update --remote --recursive
+          ./scripts/bump-deps.sh
 
-      - uses: stefanzweifel/git-auto-commit-action@v4
+      - uses: peter-evans/create-pull-request@v3
         with:
-          commit_message: Automatic submodule update
-          commit_user_name: bot-stereolabs
-          commit_user_email: bot-stereolabs@example.org
-          commit_author: bot-stereolabs <actions@github.com>
-          status_options: '--untracked-files=no'
+          base: master
+          branch: bump-submodules
+          title: Bump submodules
+          body: Automated PR created after out of date submodules were detected
+          reviewers: krzkaczor

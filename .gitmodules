@@ -1,11 +1,11 @@
 [submodule "repos/optimism-dai-bridge"]
 	path = repos/optimism-dai-bridge
 	url = https://github.com/makerdao/optimism-dai-bridge
-[submodule "repos/dss-wormhole"]
-	path = repos/dss-wormhole
-	url = git@github.com:makerdao/dss-wormhole.git
 [submodule "repos/optimism-monorepo"]
 	path = repos/optimism-monorepo
 	url = https://github.com/ethereum-optimism/optimism.git
 	ignore = dirty
 
+[submodule "repos/dss-wormhole"]
+	path = repos/dss-wormhole
+	url = https://github.com/makerdao/dss-wormhole.git
