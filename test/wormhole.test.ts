@@ -180,20 +180,7 @@ describe('Wormhole', () => {
       const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(line)) // only half the requested amount was minted (minted=line-debt=line)
 
-      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(amt)
-      const escrowedDaiBeforeFlush = await mainnetSdk.dai.balanceOf(l1Escrow.address)
-      expect(escrowedDaiBeforeFlush).to.equal(amt)
-      // Withdraw L2 DAI and pay back debt
-      // Usually relaying this message would take 7 days
-      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain))
-
-      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(0)
-      const escrowedDaiAfterFlush = await mainnetSdk.dai.balanceOf(l1Escrow.address)
-      expect(escrowedDaiAfterFlush).to.equal(0)
-
-      expect(await mainnetSdk.dai.balanceOf(router.address)).to.be.eq(0)
-      expect(await mainnetSdk.dai.balanceOf(join.address)).to.be.eq(0)
-
+      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain)) // pay back debt. Usually relaying this message would take 7 days
       await waitForTx(join.connect(l1User).mintPending(wormholeGUID, 0)) // mint leftover amount
 
       const l1BalanceAfterWithdraw = await mainnetSdk.dai.balanceOf(userAddress)
@@ -271,8 +258,41 @@ describe('Wormhole', () => {
   })
 
   describe('flush', () => {
-    it('pays back debt')
-    it("can't flush not-configured domain")
+    it('pays back debt (negative debt)', async () => {
+      // Burn L2 DAI (without withdrawing DAI on L1)
+      await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
+      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(amt)
+      expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(amt)
+
+      // Pay back (not yet incurred) debt. Usually relaying this message would take 7 days
+      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain))
+
+      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(0)
+      expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(0)
+      expect(await mainnetSdk.dai.balanceOf(router.address)).to.be.eq(0)
+      expect(await mainnetSdk.dai.balanceOf(join.address)).to.be.eq(0)
+    })
+
+    it('pays back debt (positive debt)', async () => {
+      // Burn L2 DAI AND withdraw DAI on L1
+      const tx = await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
+      const { signatures, wormholeGUID } = await getAttestations(
+        await tx.wait(),
+        l2WormholeBridge.interface,
+        oracleWallets,
+      )
+      await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0)).wait()
+      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(amt)
+      expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(amt)
+
+      // Pay back (already incurred) debt. Usually relaying this message would take 7 days
+      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain))
+
+      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(0)
+      expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(0)
+      expect(await mainnetSdk.dai.balanceOf(router.address)).to.be.eq(0)
+      expect(await mainnetSdk.dai.balanceOf(join.address)).to.be.eq(0)
+    })
   })
 
   describe('bad debt', () => {
