@@ -38,6 +38,7 @@ import {
   RelayMessagesToL1,
   WaitToRelayTxsToL2,
 } from './optimism'
+import { deploySpell } from './spell'
 import { deployWormhole } from './wormhole'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings
@@ -296,7 +297,32 @@ describe('Wormhole', () => {
   })
 
   describe('bad debt', () => {
-    it('governance pushed bad debt')
+    it('allows governance to push bad debt to the vow', async () => {
+      // Incur some debt on L1
+      const tx = await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
+      const { signatures, wormholeGUID } = await getAttestations(
+        await tx.wait(),
+        l2WormholeBridge.interface,
+        oracleWallets,
+      )
+      await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0)).wait()
+      const sinBefore = await mainnetSdk.vat.sin(mainnetSdk.vow.address)
+      expect(await join.debt(optimismDomain)).to.be.eq(amt)
+
+      // Deploy and cast bad debt reconciliation spell on L1
+      const { castBadDebtPushSpell } = await deploySpell({
+        l1Signer,
+        sdk: mainnetSdk,
+        wormholeJoinAddress: join.address,
+        sourceDomain: optimismDomain,
+        badDebt: amt,
+      })
+      await castBadDebtPushSpell // such spell would only be cast if the incurred debt isn't repaid after some period
+
+      const sinAfter = await mainnetSdk.vat.sin(mainnetSdk.vow.address)
+      expect(sinAfter.sub(sinBefore)).to.be.eq(amt.mul(toEthersBigNumber(toRay(1))))
+      expect(await join.debt(optimismDomain)).to.be.eq(0)
+    })
   })
 
   describe('emergency shutdown', () => {

@@ -18,7 +18,10 @@ cd ..
 
 cd ..
 
-echo "Setting up ./tests dir"
+echo "Setting up local test contracts"
+yarn build
+
+echo "Setting up ./external-artifacts dir"
 node ./scripts/copy-artifacts.js
 yarn
 yarn typechain
