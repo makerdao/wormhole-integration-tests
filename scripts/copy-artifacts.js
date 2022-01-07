@@ -56,3 +56,6 @@ copyHardhatArtifact(join(hardhatBridgeArtifacts, 'l1/L1DAIWormholeBridge.sol/L1D
 copyHardhatArtifact(join(hardhatBridgeArtifacts, 'l1/L1Escrow.sol/L1Escrow.json'), output)
 copyHardhatArtifact(join(hardhatBridgeArtifacts, 'l2/L2DAIWormholeBridge.sol/L2DAIWormholeBridge.json'), output)
 copyHardhatArtifact(join(hardhatTestArtifacts, 'TestBadDebtPushSpell.sol/TestBadDebtPushSpell.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'TestBadDebtPushSpell.sol/DaiJoinLike.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'TestBadDebtPushSpell.sol/VatLike.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'TestBadDebtPushSpell.sol/WormholeJoinLike.json'), output)
