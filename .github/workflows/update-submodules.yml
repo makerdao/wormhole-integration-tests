@@ -25,3 +25,4 @@ jobs:
           title: Bump submodules
           body: Automated PR created after out of date submodules were detected
           reviewers: krzkaczor
+          repo-token: ${{ secrets.PAT }}
