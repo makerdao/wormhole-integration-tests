@@ -12,7 +12,9 @@ interface SpellDeployOpts {
   badDebt: BigNumber
 }
 
-export async function deploySpell(opts: SpellDeployOpts): Promise<{ castBadDebtPushSpell: Promise<Transaction> }> {
+export async function deploySpell(
+  opts: SpellDeployOpts,
+): Promise<{ castBadDebtPushSpell: () => Promise<Transaction> }> {
   const pauseAddress = await opts.sdk.pause_proxy.owner()
   const pauseImpersonator = await impersonateAccount(pauseAddress, opts.l1Signer.provider! as any)
 
@@ -29,9 +31,10 @@ export async function deploySpell(opts: SpellDeployOpts): Promise<{ castBadDebtP
     opts.sourceDomain,
     opts.badDebt,
   ])
-  const castBadDebtPushSpell = opts.sdk.pause_proxy
-    .connect(pauseImpersonator)
-    .exec(badDebtPushSpell.address, badDebtPushSpell.interface.encodeFunctionData('execute'))
+  const castBadDebtPushSpell = () =>
+    opts.sdk.pause_proxy
+      .connect(pauseImpersonator)
+      .exec(badDebtPushSpell.address, badDebtPushSpell.interface.encodeFunctionData('execute'))
 
   return { castBadDebtPushSpell }
 }

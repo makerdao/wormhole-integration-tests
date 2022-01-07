@@ -62,6 +62,7 @@ describe('Wormhole', () => {
   let l1User: Wallet
   let l2User: Wallet
   let userAddress: string // both l1 and l2 user should have the same address
+  let ilk: string
   let l1Signer: Wallet
   let l2Signer: Wallet
   let l1WormholeBridge: L1DAIWormholeBridge
@@ -102,10 +103,11 @@ describe('Wormhole', () => {
   })
 
   beforeEach(async () => {
+    ilk = bytes32('WH_' + Buffer.from(randomBytes(14)).toString('hex')) // appending a random id allows for multiple deployments in the same vat
     ;({ join, oracleAuth, router } = await deployWormhole({
       defaultSigner: l1Signer,
       sdk: mainnetSdk,
-      ilk: bytes32('WH_' + Buffer.from(randomBytes(14)).toString('hex')), // appending a random id allows for multiple deployments in the same vat
+      ilk,
       joinDomain: mainnetDomain,
       line,
       spot,
@@ -264,11 +266,21 @@ describe('Wormhole', () => {
       await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
       expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(amt)
       expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(amt)
+      expect(await join.debt(optimismDomain)).to.be.eq(0)
+      let urn = await mainnetSdk.vat.urns(ilk, join.address)
+      expect(urn.art).to.be.eq(0)
+      expect(urn.ink).to.be.eq(0)
+      expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(amt)
 
       // Pay back (not yet incurred) debt. Usually relaying this message would take 7 days
       await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain))
 
       expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(0)
+      expect(toEthersBigNumber(0).sub(await join.debt(optimismDomain))).to.be.eq(amt) // debt should be negative
+      urn = await mainnetSdk.vat.urns(ilk, join.address)
+      expect(urn.art).to.be.eq(0)
+      expect(urn.ink).to.be.eq(0)
+      expect(await mainnetSdk.vat.dai(join.address)).to.be.eq(amt.mul(toEthersBigNumber(toRay(1))))
       expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(0)
       expect(await mainnetSdk.dai.balanceOf(router.address)).to.be.eq(0)
       expect(await mainnetSdk.dai.balanceOf(join.address)).to.be.eq(0)
@@ -284,12 +296,21 @@ describe('Wormhole', () => {
       )
       await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0)).wait()
       expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(amt)
+      expect(await join.debt(optimismDomain)).to.be.eq(amt)
+      let urn = await mainnetSdk.vat.urns(ilk, join.address)
+      expect(urn.art).to.be.eq(amt)
+      expect(urn.ink).to.be.eq(amt)
       expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(amt)
 
       // Pay back (already incurred) debt. Usually relaying this message would take 7 days
       await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain))
 
       expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(0)
+      expect(await join.debt(optimismDomain)).to.be.eq(0)
+      urn = await mainnetSdk.vat.urns(ilk, join.address)
+      expect(urn.art).to.be.eq(0)
+      expect(urn.ink).to.be.eq(0)
+      expect(await mainnetSdk.vat.dai(join.address)).to.be.eq(0)
       expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(0)
       expect(await mainnetSdk.dai.balanceOf(router.address)).to.be.eq(0)
       expect(await mainnetSdk.dai.balanceOf(join.address)).to.be.eq(0)
@@ -317,7 +338,7 @@ describe('Wormhole', () => {
         sourceDomain: optimismDomain,
         badDebt: amt,
       })
-      await castBadDebtPushSpell // such spell would only be cast if the incurred debt isn't repaid after some period
+      await castBadDebtPushSpell() // such spell would only be cast if the incurred debt isn't repaid after some period
 
       const sinAfter = await mainnetSdk.vat.sin(mainnetSdk.vow.address)
       expect(sinAfter.sub(sinBefore)).to.be.eq(amt.mul(toEthersBigNumber(toRay(1))))
