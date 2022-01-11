@@ -7,11 +7,13 @@ cd "$(dirname "$0")"
 cd ../repos/
 
 cd dss-wormhole
-git pull origin master
+git checkout master
+git pull
 cd ..
 
 cd optimism-dai-bridge
-git pull origin kk/wormhole-bridge
+git checkout master
+git pull
 cd ..
 
 echo "Dependencies bumped..."
