@@ -12,7 +12,7 @@ git pull
 cd ..
 
 cd optimism-dai-bridge
-git checkout master
+git checkout kk/wormhole-bridge
 git pull
 cd ..
 
