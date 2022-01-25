@@ -11,6 +11,7 @@ import { getAttestations } from './attestations'
 import { deployBaseBridge, deployBridge } from './bridge'
 import { mintDai } from './dai'
 import {
+  forwardTime,
   getOptimismAddresses,
   mintEther,
   OptimismAddresses,
@@ -31,7 +32,7 @@ import {
   WaitToRelayTxsToL2,
 } from './optimism'
 import { deploySpell } from './spell'
-import { deployWormhole } from './wormhole'
+import { deployWormhole, OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME } from './wormhole'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings
 const bytes32 = ethers.utils.formatBytes32String
@@ -141,7 +142,9 @@ describe('Wormhole', () => {
 
       const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
       const vowDaiBalanceBefore = await mainnetSdk.vat.dai(mainnetSdk.vow.address)
-      const tx = await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
+      const tx = await l2WormholeBridge
+        .connect(l2User)
+        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
       const { signHash, signatures, wormholeGUID } = await getAttestations(
         await tx.wait(),
         l2WormholeBridge.interface,
@@ -152,7 +155,7 @@ describe('Wormhole', () => {
       expect(await oracleAuth.isValid(signHash, signatures, oracleWallets.length)).to.be.true
       const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
 
-      await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, maxFeePerc)).wait()
+      await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, maxFeePerc, 0)).wait()
 
       const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt).sub(fee))
@@ -316,10 +319,13 @@ describe('Wormhole', () => {
       }))
 
       const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
-      const tx = await l2WormholeBridge.connect(l2User).initiateWormhole(mainnetDomain, userAddress, amt, userAddress)
+      const tx = await l2WormholeBridge
+        .connect(l2User)
+        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
       const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
       expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
 
+      await forwardTime(l1Provider, OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME)
       const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
       const l1RelayMessages = await relayMessagesToL1(tx)
       expect(l1RelayMessages.length).to.be.eq(1)

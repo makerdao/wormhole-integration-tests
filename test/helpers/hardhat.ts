@@ -21,5 +21,16 @@ export async function mintEther(
   provider: ethers.providers.JsonRpcProvider = hre.ethers.provider,
   amt: AnyNumber = toWad(100),
 ): Promise<void> {
-  await provider.send('hardhat_setBalance', [address, '0x' + toMyBigNumber(amt).toString(16)])
+  await provider.send('hardhat_setBalance', [address, encodeHex(amt)])
+}
+
+export async function forwardTime(
+  provider: ethers.providers.JsonRpcProvider = hre.ethers.provider,
+  timeDelta: AnyNumber,
+) {
+  await provider.send('evm_increaseTime', [encodeHex(timeDelta)])
+}
+
+function encodeHex(number: AnyNumber): string {
+  return '0x' + toMyBigNumber(number).toString(16)
 }
