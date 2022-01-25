@@ -247,7 +247,7 @@ describe('Wormhole', () => {
       const { signatures, wormholeGUID } = await getAttestations(txReceipt, l2WormholeBridge.interface, oracleWallets)
 
       await expect(oracleAuth.connect(l1Signer).requestMint(wormholeGUID, signatures, 0, 0)).to.be.revertedWith(
-        'WormholeOracleAuth/not-operator',
+        'WormholeOracleAuth/not-receiver-nor-operator',
       )
     })
   })
