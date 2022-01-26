@@ -1,5 +1,5 @@
 import { MainnetSdk } from '@dethcrypto/eth-sdk-client'
-import { BigNumber, Signer } from 'ethers'
+import { BigNumber, BigNumberish, Signer } from 'ethers'
 import { hexlify, hexZeroPad } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 import { Dictionary } from 'ts-essentials'
@@ -17,6 +17,8 @@ import { getContractFactory, impersonateAccount } from './helpers'
 
 const bytes32 = ethers.utils.formatBytes32String
 
+export const OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME = 60 * 60 * 24 * 8 // flush should happen more or less, 1 day after initWormhole, and should take 7 days to finalize
+
 export async function deployWormhole({
   defaultSigner,
   sdk,
@@ -26,6 +28,7 @@ export async function deployWormhole({
   joinDomain,
   domainsCfg,
   oracleAddresses,
+  fee,
 }: {
   defaultSigner: Signer
   sdk: MainnetSdk
@@ -35,6 +38,7 @@ export async function deployWormhole({
   joinDomain: string
   domainsCfg: Dictionary<{ line: BigNumber }>
   oracleAddresses: string[]
+  fee: BigNumberish
 }): Promise<{ join: WormholeJoin; oracleAuth: WormholeOracleAuth; router: WormholeRouter }> {
   const WormholeJoinFactory = getContractFactory<WormholeJoin__factory>('WormholeJoin', defaultSigner)
   const join = await WormholeJoinFactory.deploy(sdk.vat.address, sdk.dai_join.address, ilk, joinDomain)
@@ -50,8 +54,8 @@ export async function deployWormhole({
   console.log('Configuring join...')
   await join['file(bytes32,address)'](bytes32('vow'), sdk.vow.address)
   const ConstantFeeFactory = getContractFactory<WormholeConstantFee__factory>('WormholeConstantFee', defaultSigner)
-  const optimisticRollupFlushFinalizationTime = 60 * 60 * 24 * 8 // flush should happen more or less, 1 day after initWormhoole, and should take 7 days to finalize
-  const constantFee = await ConstantFeeFactory.deploy(0, optimisticRollupFlushFinalizationTime)
+
+  const constantFee = await ConstantFeeFactory.deploy(fee, OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME)
   for (const [domainName, domainCfg] of Object.entries(domainsCfg)) {
     await join['file(bytes32,bytes32,address)'](bytes32('fees'), domainName, constantFee.address)
     await join['file(bytes32,bytes32,uint256)'](bytes32('line'), domainName, domainCfg.line)
