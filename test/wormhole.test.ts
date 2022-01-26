@@ -96,7 +96,7 @@ describe('Wormhole', () => {
 
   describe('fast path', () => {
     it('lets a user request minted DAI on L1 using oracle attestations', async () => {
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -130,7 +130,7 @@ describe('Wormhole', () => {
       const fee = toEthersBigNumber(toWad(1))
       const feeInRad = toEthersBigNumber(toRad(1))
       const maxFeePerc = toEthersBigNumber(toWad(0.1)) // 10%
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -165,7 +165,7 @@ describe('Wormhole', () => {
     })
 
     it('allows partial mints using oracle attestations when the amount withdrawn exceeds the maximum additional debt', async () => {
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -203,7 +203,7 @@ describe('Wormhole', () => {
     })
 
     it('reverts when a user requests minted DAI on L1 using bad attestations', async () => {
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -257,7 +257,7 @@ describe('Wormhole', () => {
     })
 
     it('reverts when non-operator requests minted DAI on L1 using oracle attestations', async () => {
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -282,7 +282,7 @@ describe('Wormhole', () => {
 
   describe('slow path', () => {
     it('mints DAI without oracles', async () => {
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -308,7 +308,7 @@ describe('Wormhole', () => {
     })
 
     it('mints DAI without oracles when fees are non 0', async () => {
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -337,7 +337,7 @@ describe('Wormhole', () => {
 
   describe('flush', () => {
     it('pays back debt (negative debt)', async () => {
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -374,7 +374,7 @@ describe('Wormhole', () => {
     })
 
     it('pays back debt (positive debt)', async () => {
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -418,7 +418,7 @@ describe('Wormhole', () => {
 
   describe('bad debt', () => {
     it('allows governance to push bad debt to the vow', async () => {
-      ;({ join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
