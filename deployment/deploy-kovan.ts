@@ -1,8 +1,4 @@
-import { deployWormhole } from '../test/contracts/wormhole'
-
-async function main() {
-  const wormholeJoin = deployWormhole({})
-}
+async function main() {}
 
 main()
   .then(() => console.log('DONE'))

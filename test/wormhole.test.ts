@@ -11,7 +11,11 @@ import { getAttestations } from './contracts/attestations'
 import { deployBaseBridge, deployBridge } from './contracts/bridge'
 import { mintDai } from './contracts/dai'
 import { deploySpell } from './contracts/spell'
-import { deployWormhole, OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME } from './contracts/wormhole'
+import {
+  addWormholeJoinToVat,
+  deployWormholeJoin,
+  OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME,
+} from './contracts/wormholeJoin'
 import {
   forwardTime,
   getOptimismAddresses,
@@ -482,19 +486,27 @@ async function setupTest({
   fee,
 }: SetupTestOpts) {
   const ilk = bytes32('WH_' + Buffer.from(randomBytes(14)).toString('hex')) // appending a random id allows for multiple deployments in the same vat
-  const { join, oracleAuth, router } = await deployWormhole({
+  const { join, oracleAuth, router } = await deployWormholeJoin({
     defaultSigner: l1Signer,
     sdk: mainnetSdk,
     ilk,
     joinDomain: mainnetDomain,
-    line,
-    spot,
     domainsCfg: {
       [optimismDomain]: { line },
     },
     oracleAddresses: oracleWallets.map((or) => or.address),
-    fee,
+    globalFee: fee,
+    globalFeeTTL: OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME,
   })
+  await addWormholeJoinToVat({
+    defaultSigner: l1Signer,
+    sdk: mainnetSdk,
+    ilk,
+    join,
+    line,
+    spot,
+  })
+
   const baseBridge = await deployBaseBridge({ l1Signer, l2Signer, mainnetSdk, optimismAddresses })
   const l2Dai = baseBridge.l2Dai
   const l1Escrow = baseBridge.l1Escrow
