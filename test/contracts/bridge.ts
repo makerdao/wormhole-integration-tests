@@ -9,10 +9,10 @@ import {
   L1DAIWormholeBridge__factory,
   L2DAITokenBridge__factory,
   L2DAIWormholeBridge__factory,
-} from '../typechain'
-import { deployUsingFactory, getContractFactory, mintEther } from './helpers'
-import { OptimismAddresses, waitForTx } from './helpers'
-import { getAddressOfNextDeployedContract } from './pe-utils/address'
+} from '../../typechain'
+import { deployUsingFactory, getContractFactory, mintEther } from '../helpers'
+import { OptimismAddresses, waitForTx } from '../helpers'
+import { getAddressOfNextDeployedContract } from '../pe-utils/address'
 
 interface BridgeDeployOpts {
   l1Signer: Signer

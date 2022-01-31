@@ -7,9 +7,11 @@ import { BigNumberish, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
 import { Dai, L2DAIWormholeBridge, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../typechain'
-import { getAttestations } from './attestations'
-import { deployBaseBridge, deployBridge } from './bridge'
-import { mintDai } from './dai'
+import { getAttestations } from './contracts/attestations'
+import { deployBaseBridge, deployBridge } from './contracts/bridge'
+import { mintDai } from './contracts/dai'
+import { deploySpell } from './contracts/spell'
+import { deployWormhole, OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME } from './contracts/wormhole'
 import {
   forwardTime,
   getOptimismAddresses,
@@ -31,8 +33,6 @@ import {
   RelayMessagesToL1,
   WaitToRelayTxsToL2,
 } from './optimism'
-import { deploySpell } from './spell'
-import { deployWormhole, OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME } from './wormhole'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings
 const bytes32 = ethers.utils.formatBytes32String

@@ -12,8 +12,8 @@ import {
   WormholeOracleAuth__factory,
   WormholeRouter,
   WormholeRouter__factory,
-} from '../typechain'
-import { getContractFactory, impersonateAccount } from './helpers'
+} from '../../typechain'
+import { getContractFactory, impersonateAccount } from '../helpers'
 
 const bytes32 = ethers.utils.formatBytes32String
 

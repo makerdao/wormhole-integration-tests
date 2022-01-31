@@ -1,8 +1,8 @@
 import { MainnetSdk } from '@dethcrypto/eth-sdk-client'
 import { BigNumber, Signer, Transaction } from 'ethers'
 
-import { TestBadDebtPushSpell__factory } from '../typechain/factories/TestBadDebtPushSpell__factory'
-import { deployUsingFactory, getContractFactory, impersonateAccount } from './helpers'
+import { TestBadDebtPushSpell__factory } from '../../typechain/factories/TestBadDebtPushSpell__factory'
+import { deployUsingFactory, getContractFactory, impersonateAccount } from '../helpers'
 
 interface SpellDeployOpts {
   l1Signer: Signer
