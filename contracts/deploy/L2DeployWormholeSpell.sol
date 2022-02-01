@@ -21,13 +21,10 @@ interface DaiLike {
 }
 
 contract L1DeployWormholeSpell {
-  VatLike public immutable dai;
+  DaiLike public immutable dai;
   address public immutable wormholeBridge;
 
-  constructor(
-    DaiLike _dai,
-    address _wormholeBridge
-  ) {
+  constructor(DaiLike _dai, address _wormholeBridge) {
     dai = _dai;
     wormholeBridge = _wormholeBridge;
   }

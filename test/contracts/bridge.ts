@@ -3,27 +3,27 @@ import { expect } from 'chai'
 import { constants, ethers, Signer, Wallet } from 'ethers'
 
 import {
-  Dai,
   Dai__factory,
   L1DAITokenBridge__factory,
   L1DAIWormholeBridge__factory,
   L2DAITokenBridge__factory,
-  L2DAIWormholeBridge,
   L2DAIWormholeBridge__factory,
 } from '../../typechain'
 import { deployUsingFactory, getContractFactory, mintEther } from '../helpers'
 import { OptimismAddresses, waitForTx } from '../helpers'
 import { getAddressOfNextDeployedContract } from '../pe-utils/address'
+import { WormholeSdk } from './wormholeJoin'
+
+const bytes32 = ethers.utils.formatBytes32String
 
 interface BridgeDeployOpts {
   l1Signer: Signer
   l2Signer: Signer
   mainnetSdk: MainnetSdk
+  wormholeSdk: WormholeSdk
+  baseBridgeSdk: BaseBridgeSdk
   optimismAddresses: OptimismAddresses
   domain: string
-  wormholeRouter: string
-  l1Escrow: Wallet
-  l2Dai: Dai
 }
 
 export async function deployBridge(opts: BridgeDeployOpts) {
@@ -31,7 +31,7 @@ export async function deployBridge(opts: BridgeDeployOpts) {
   const L2WormholeBridgeFactory = getContractFactory<L2DAIWormholeBridge__factory>('L2DAIWormholeBridge', opts.l2Signer)
   const l2WormholeBridge = await deployUsingFactory(opts.l2Signer, L2WormholeBridgeFactory, [
     opts.optimismAddresses.l2.xDomainMessenger,
-    opts.l2Dai.address,
+    opts.baseBridgeSdk.l2Dai.address,
     futureL1WormholeBridgeAddress,
     opts.domain,
   ])
@@ -41,24 +41,33 @@ export async function deployBridge(opts: BridgeDeployOpts) {
     opts.mainnetSdk.dai.address,
     l2WormholeBridge.address,
     opts.optimismAddresses.l1.xDomainMessenger,
-    opts.l1Escrow.address,
-    opts.wormholeRouter,
+    opts.baseBridgeSdk.l1Escrow.address,
+    opts.wormholeSdk.router.address,
   ])
   expect(l1WormholeBridge.address).to.be.eq(futureL1WormholeBridgeAddress, 'Future address doesnt match actual address')
-  await opts.mainnetSdk.dai.connect(opts.l1Escrow).approve(l1WormholeBridge.address, constants.MaxUint256)
 
   return { l2WormholeBridge, l1WormholeBridge }
 }
+export type BridgeSdk = Awaited<ReturnType<typeof deployBridge>>
 
-export async function configureL2Dai({
-  l2Dai,
-  l2WormholeBridge,
+export async function configureWormholeBridge({
+  baseBridgeSdk,
+  bridgeSdk,
+  sdk,
+  mainnetDomain,
 }: {
-  l2Dai: Dai
-  l2WormholeBridge: L2DAIWormholeBridge
+  sdk: MainnetSdk
+  bridgeSdk: BridgeSdk
+  baseBridgeSdk: BaseBridgeSdk
+  mainnetDomain: string
 }) {
-  // wormhole bridge has to have burn rights
-  await l2Dai.rely(l2WormholeBridge.address)
+  await waitForTx(bridgeSdk.l2WormholeBridge.file(bytes32('validDomains'), mainnetDomain, 1))
+
+  // l2 wormhole bridge has to have burn rights
+  await baseBridgeSdk.l2Dai.rely(bridgeSdk.l2WormholeBridge.address)
+
+  // l1 wormhole bridge has to have escrow rights
+  await sdk.dai.connect(baseBridgeSdk.l1Escrow).approve(bridgeSdk.l1WormholeBridge.address, constants.MaxUint256)
 }
 
 interface BaseBridgeDeployOpts {
@@ -111,3 +120,4 @@ export async function deployBaseBridge(opts: BaseBridgeDeployOpts) {
     l1Escrow,
   }
 }
+export type BaseBridgeSdk = Awaited<ReturnType<typeof deployBaseBridge>>
