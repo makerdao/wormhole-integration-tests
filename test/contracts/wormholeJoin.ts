@@ -13,7 +13,7 @@ import {
   WormholeRouter,
   WormholeRouter__factory,
 } from '../../typechain'
-import { getContractFactory, impersonateAccount } from '../helpers'
+import { getContractFactory, impersonateAccount, toEthersBigNumber, toRay } from '../helpers'
 
 const bytes32 = ethers.utils.formatBytes32String
 
@@ -73,13 +73,11 @@ export async function addWormholeJoinToVat({
   ilk,
   line,
   sdk,
-  spot,
   join,
 }: {
   defaultSigner: Signer
   sdk: MainnetSdk
   line: BigNumber
-  spot: BigNumber
   ilk: string
   join: WormholeJoin
 }) {
@@ -87,6 +85,8 @@ export async function addWormholeJoinToVat({
   const makerGovernanceImpersonator = await impersonateAccount(sdk.pause_proxy.address, defaultSigner.provider! as any)
   await sdk.vat.connect(makerGovernanceImpersonator).rely(join.address)
   await sdk.vat.connect(makerGovernanceImpersonator).init(ilk)
-  await sdk.vat.connect(makerGovernanceImpersonator)['file(bytes32,bytes32,uint256)'](ilk, bytes32('spot'), spot)
+  await sdk.vat
+    .connect(makerGovernanceImpersonator)
+    ['file(bytes32,bytes32,uint256)'](ilk, bytes32('spot'), toEthersBigNumber(toRay(1)))
   await sdk.vat.connect(makerGovernanceImpersonator)['file(bytes32,bytes32,uint256)'](ilk, bytes32('line'), line)
 }

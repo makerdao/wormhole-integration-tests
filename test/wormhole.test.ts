@@ -47,7 +47,6 @@ const optimismDomain = bytes32('OPTIMISM-A')
 const mainnetDomain = bytes32('MAINNET')
 
 const line = toEthersBigNumber(toRad(10_000_000)) // 10M debt ceiling
-const spot = toEthersBigNumber(toRay(1))
 const amt = toEthersBigNumber(toWad(10))
 
 describe('Wormhole', () => {
@@ -504,7 +503,6 @@ async function setupTest({
     ilk,
     join,
     line,
-    spot,
   })
 
   const baseBridge = await deployBaseBridge({ l1Signer, l2Signer, mainnetSdk, optimismAddresses })

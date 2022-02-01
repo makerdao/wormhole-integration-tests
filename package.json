@@ -6,8 +6,8 @@
   "scripts": {
     "build": "hardhat compile",
     "typechain": "typechain --target ethers-v5 --out-dir ./typechain 'external-artifacts/*.json'",
-    "format": "prettier --check \"./**/*.{js,ts}\"",
-    "format:fix": "prettier --write \"./**/*.{js,ts}\"",
+    "format": "prettier --check \"./**/*.{js,ts,sol}\"",
+    "format:fix": "prettier --write \"./**/*.{js,ts,sol}\"",
     "lint": "eslint --ext .ts test deployment",
     "lint:fix": "yarn lint --fix",
     "typecheck": "tsc --noEmit --incremental false --composite false",
