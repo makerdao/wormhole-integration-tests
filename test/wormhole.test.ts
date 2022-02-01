@@ -8,7 +8,7 @@ import { ethers } from 'hardhat'
 
 import { Dai, L2DAIWormholeBridge, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../typechain'
 import { getAttestations } from './contracts/attestations'
-import { deployBaseBridge, deployBridge } from './contracts/bridge'
+import { configureL2Dai, deployBaseBridge, deployBridge } from './contracts/bridge'
 import { mintDai } from './contracts/dai'
 import { deploySpell } from './contracts/spell'
 import {
@@ -518,8 +518,9 @@ async function setupTest({
     l1Escrow,
     l2Dai,
   })
+  await configureL2Dai({ l2Dai, l2WormholeBridge })
 
-  console.log('Configuring router...')
+  console.log('Configuring L1 router...')
   await waitForTx(router.file(bytes32('gateway'), optimismDomain, l1WormholeBridge.address))
   await waitForTx(l2WormholeBridge.file(bytes32('validDomains'), mainnetDomain, 1))
 

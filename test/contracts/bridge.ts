@@ -8,6 +8,7 @@ import {
   L1DAITokenBridge__factory,
   L1DAIWormholeBridge__factory,
   L2DAITokenBridge__factory,
+  L2DAIWormholeBridge,
   L2DAIWormholeBridge__factory,
 } from '../../typechain'
 import { deployUsingFactory, getContractFactory, mintEther } from '../helpers'
@@ -34,8 +35,6 @@ export async function deployBridge(opts: BridgeDeployOpts) {
     futureL1WormholeBridgeAddress,
     opts.domain,
   ])
-  // wormhole bridge has to have burn rights
-  await opts.l2Dai.rely(l2WormholeBridge.address)
 
   const L1WormholeBridgeFactory = getContractFactory<L1DAIWormholeBridge__factory>('L1DAIWormholeBridge')
   const l1WormholeBridge = await deployUsingFactory(opts.l1Signer, L1WormholeBridgeFactory, [
@@ -49,6 +48,17 @@ export async function deployBridge(opts: BridgeDeployOpts) {
   await opts.mainnetSdk.dai.connect(opts.l1Escrow).approve(l1WormholeBridge.address, constants.MaxUint256)
 
   return { l2WormholeBridge, l1WormholeBridge }
+}
+
+export async function configureL2Dai({
+  l2Dai,
+  l2WormholeBridge,
+}: {
+  l2Dai: Dai
+  l2WormholeBridge: L2DAIWormholeBridge
+}) {
+  // wormhole bridge has to have burn rights
+  await l2Dai.rely(l2WormholeBridge.address)
 }
 
 interface BaseBridgeDeployOpts {
