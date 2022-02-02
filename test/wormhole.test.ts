@@ -6,7 +6,7 @@ import { expect } from 'chai'
 import { BigNumberish, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
-import { Dai, L2DAIWormholeBridge, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../typechain'
+import { Dai, L1Escrow, L2DAIWormholeBridge, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../typechain'
 import { getAttestations } from './contracts/attestations'
 import { configureWormholeBridge, deployBaseBridge, deployBridge } from './contracts/bridge'
 import { mintDai } from './contracts/dai'
@@ -15,6 +15,7 @@ import { configureWormhole, deployWormhole, OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION
 import {
   forwardTime,
   getOptimismAddresses,
+  impersonateAccount,
   mintEther,
   OptimismAddresses,
   toEthersBigNumber,
@@ -40,7 +41,7 @@ const bytes32 = ethers.utils.formatBytes32String
 const oracleWallets = [...Array(3)].map(() => Wallet.createRandom())
 
 const optimismDomain = bytes32('OPTIMISM-A')
-const mainnetDomain = bytes32('MAINNET')
+const masterDomain = bytes32('MAINNET')
 
 const line = toEthersBigNumber(toRad(10_000_000)) // 10M debt ceiling
 const amt = toEthersBigNumber(toWad(10))
@@ -64,7 +65,7 @@ describe('Wormhole', () => {
   let mainnetSdk: MainnetSdk
   let optimismAddresses: OptimismAddresses
   let l2Dai: Dai
-  let l1Escrow: Wallet
+  let l1Escrow: L1Escrow
 
   before(async () => {
     l1Provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:9545')
@@ -104,13 +105,12 @@ describe('Wormhole', () => {
         l1User,
         fee: 0,
       }))
-
       const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
-      const tx = await l2WormholeBridge
-        .connect(l2User)
-        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
+      const tx = await waitForTx(
+        l2WormholeBridge.connect(l2User)['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt),
+      )
       const { signHash, signatures, wormholeGUID } = await getAttestations(
-        await tx.wait(),
+        tx,
         l2WormholeBridge.interface,
         oracleWallets,
       )
@@ -119,7 +119,7 @@ describe('Wormhole', () => {
       expect(await oracleAuth.isValid(signHash, signatures, oracleWallets.length)).to.be.true
       const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
 
-      await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0)).wait()
+      await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
 
       const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt))
@@ -141,11 +141,11 @@ describe('Wormhole', () => {
 
       const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
       const vowDaiBalanceBefore = await mainnetSdk.vat.dai(mainnetSdk.vow.address)
-      const tx = await l2WormholeBridge
-        .connect(l2User)
-        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
+      const tx = await waitForTx(
+        l2WormholeBridge.connect(l2User)['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt),
+      )
       const { signHash, signatures, wormholeGUID } = await getAttestations(
-        await tx.wait(),
+        tx,
         l2WormholeBridge.interface,
         oracleWallets,
       )
@@ -154,7 +154,7 @@ describe('Wormhole', () => {
       expect(await oracleAuth.isValid(signHash, signatures, oracleWallets.length)).to.be.true
       const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
 
-      await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, maxFeePerc, 0)).wait()
+      await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, maxFeePerc, 0))
 
       const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt).sub(fee))
@@ -164,7 +164,7 @@ describe('Wormhole', () => {
     })
 
     it('allows partial mints using oracle attestations when the amount withdrawn exceeds the maximum additional debt', async () => {
-      ;({ ilk, join, oracleAuth, router, l2Dai, l1Escrow, l2WormholeBridge } = await setupTest({
+      const { join, oracleAuth, l2Dai, l2WormholeBridge, govImpersonator } = await setupTest({
         l1Signer,
         l2Signer,
         mainnetSdk,
@@ -172,29 +172,25 @@ describe('Wormhole', () => {
         waitToRelayTxsToL2,
         l1User,
         fee: 0,
-      }))
+      })
 
       const line = amt.div(2) // withdrawing an amount that is twice the debt ceiling
-      await join['file(bytes32,bytes32,uint256)'](bytes32('line'), optimismDomain, line)
+      await join.connect(govImpersonator)['file(bytes32,bytes32,uint256)'](bytes32('line'), optimismDomain, line)
       const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
-      const tx = await l2WormholeBridge
-        .connect(l2User)
-        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
-      const { signatures, wormholeGUID } = await getAttestations(
-        await tx.wait(),
-        l2WormholeBridge.interface,
-        oracleWallets,
+      const tx = await waitForTx(
+        l2WormholeBridge.connect(l2User)['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt),
       )
+      const { signatures, wormholeGUID } = await getAttestations(tx, l2WormholeBridge.interface, oracleWallets)
       const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
       expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
       const l1BalanceBeforeMint = await mainnetSdk.dai.balanceOf(userAddress)
 
-      await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0)).wait() // mint maximum possible
+      await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0)) // mint maximum possible
 
       const l1BalanceAfterMint = await mainnetSdk.dai.balanceOf(userAddress)
       expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(line)) // only half the requested amount was minted (minted=line-debt=line)
 
-      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain)) // pay back debt. Usually relaying this message would take 7 days
+      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain)) // pay back debt. Usually relaying this message would take 7 days
       await waitForTx(join.connect(l1User).mintPending(wormholeGUID, 0, 0)) // mint leftover amount
 
       const l1BalanceAfterWithdraw = await mainnetSdk.dai.balanceOf(userAddress)
@@ -212,11 +208,11 @@ describe('Wormhole', () => {
         fee: 0,
       }))
 
-      const tx = await l2WormholeBridge
-        .connect(l2User)
-        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
+      const tx = await waitForTx(
+        l2WormholeBridge.connect(l2User)['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt),
+      )
       const { signHash, signatures, wormholeGUID } = await getAttestations(
-        await tx.wait(),
+        tx,
         l2WormholeBridge.interface,
         oracleWallets,
       )
@@ -269,7 +265,7 @@ describe('Wormhole', () => {
       const txReceipt = await (
         await l2WormholeBridge
           .connect(l2User)
-          ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
+          ['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt)
       ).wait()
       const { signatures, wormholeGUID } = await getAttestations(txReceipt, l2WormholeBridge.interface, oracleWallets)
 
@@ -294,7 +290,7 @@ describe('Wormhole', () => {
       const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
       const tx = await l2WormholeBridge
         .connect(l2User)
-        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
+        ['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt)
       const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
       expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
 
@@ -320,7 +316,7 @@ describe('Wormhole', () => {
       const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
       const tx = await l2WormholeBridge
         .connect(l2User)
-        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
+        ['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt)
       const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
       expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
 
@@ -349,8 +345,8 @@ describe('Wormhole', () => {
       // Burn L2 DAI (without withdrawing DAI on L1)
       await l2WormholeBridge
         .connect(l2User)
-        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
-      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(amt)
+        ['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt)
+      expect(await l2WormholeBridge.batchedDaiToFlush(masterDomain)).to.be.eq(amt)
       expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(amt)
       expect(await join.debt(optimismDomain)).to.be.eq(0)
       let urn = await mainnetSdk.vat.urns(ilk, join.address)
@@ -359,9 +355,9 @@ describe('Wormhole', () => {
       expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(amt)
 
       // Pay back (not yet incurred) debt. Usually relaying this message would take 7 days
-      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain))
+      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
 
-      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(0)
+      expect(await l2WormholeBridge.batchedDaiToFlush(masterDomain)).to.be.eq(0)
       expect(toEthersBigNumber(0).sub(await join.debt(optimismDomain))).to.be.eq(amt) // debt should be negative
       urn = await mainnetSdk.vat.urns(ilk, join.address)
       expect(urn.art).to.be.eq(0)
@@ -386,14 +382,14 @@ describe('Wormhole', () => {
       // Burn L2 DAI AND withdraw DAI on L1
       const tx = await l2WormholeBridge
         .connect(l2User)
-        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
+        ['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt)
       const { signatures, wormholeGUID } = await getAttestations(
         await tx.wait(),
         l2WormholeBridge.interface,
         oracleWallets,
       )
       await (await oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0)).wait()
-      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(amt)
+      expect(await l2WormholeBridge.batchedDaiToFlush(masterDomain)).to.be.eq(amt)
       expect(await join.debt(optimismDomain)).to.be.eq(amt)
       let urn = await mainnetSdk.vat.urns(ilk, join.address)
       expect(urn.art).to.be.eq(amt)
@@ -401,9 +397,9 @@ describe('Wormhole', () => {
       expect(await mainnetSdk.dai.balanceOf(l1Escrow.address)).to.be.eq(amt)
 
       // Pay back (already incurred) debt. Usually relaying this message would take 7 days
-      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(mainnetDomain))
+      await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
 
-      expect(await l2WormholeBridge.batchedDaiToFlush(mainnetDomain)).to.be.eq(0)
+      expect(await l2WormholeBridge.batchedDaiToFlush(masterDomain)).to.be.eq(0)
       expect(await join.debt(optimismDomain)).to.be.eq(0)
       urn = await mainnetSdk.vat.urns(ilk, join.address)
       expect(urn.art).to.be.eq(0)
@@ -430,7 +426,7 @@ describe('Wormhole', () => {
       // Incur some debt on L1
       const tx = await l2WormholeBridge
         .connect(l2User)
-        ['initiateWormhole(bytes32,address,uint128)'](mainnetDomain, userAddress, amt)
+        ['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt)
       const { signatures, wormholeGUID } = await getAttestations(
         await tx.wait(),
         l2WormholeBridge.interface,
@@ -486,11 +482,11 @@ async function setupTest({
     defaultSigner: l1Signer,
     sdk: mainnetSdk,
     ilk,
-    joinDomain: mainnetDomain,
+    joinDomain: masterDomain,
     globalFee: fee,
     globalFeeTTL: OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME,
   })
-  const baseBridgeSdk = await deployBaseBridge({ l1Signer, l2Signer, mainnetSdk, optimismAddresses })
+  const baseBridgeSdk = await deployBaseBridge({ l1Signer, l2Signer, sdk: mainnetSdk, optimismAddresses })
   const bridgeSdk = await deployBridge({
     domain: optimismDomain,
     optimismAddresses,
@@ -505,14 +501,15 @@ async function setupTest({
     defaultSigner: l1Signer,
     sdk: mainnetSdk,
     wormholeSdk,
-    joinDomain: mainnetDomain,
+    joinDomain: masterDomain,
     globalLine: line,
     domainsCfg: {
       [optimismDomain]: { line, l1Bridge: bridgeSdk.l1WormholeBridge.address },
     },
+    baseBridgeSdk,
     oracleAddresses: oracleWallets.map((or) => or.address),
   })
-  await configureWormholeBridge({ sdk: mainnetSdk, baseBridgeSdk, bridgeSdk, mainnetDomain })
+  await configureWormholeBridge({ baseBridgeSdk, bridgeSdk, masterDomain, l2Signer })
 
   console.log('Moving some DAI to L2')
   await mainnetSdk.dai.connect(l1User).approve(baseBridgeSdk.l1DaiTokenBridge.address, amt)
@@ -522,10 +519,13 @@ async function setupTest({
       .depositERC20(mainnetSdk.dai.address, baseBridgeSdk.l2Dai.address, amt, defaultL2Gas, defaultL2Data),
   )
 
+  const govImpersonator = await impersonateAccount(mainnetSdk.pause_proxy.address, mainnetSdk.dai.provider as any)
+
   return {
     ilk,
     ...bridgeSdk,
     ...baseBridgeSdk,
     ...wormholeSdk,
+    govImpersonator,
   }
 }

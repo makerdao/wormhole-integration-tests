@@ -5,6 +5,8 @@ import { ethers } from 'hardhat'
 import { Dictionary } from 'ts-essentials'
 
 import {
+  L1AddWormholeDomainSpell__factory,
+  L1ConfigureWormholeSpell__factory,
   WormholeConstantFee,
   WormholeConstantFee__factory,
   WormholeJoin,
@@ -14,7 +16,9 @@ import {
   WormholeRouter,
   WormholeRouter__factory,
 } from '../../typechain'
-import { getContractFactory, impersonateAccount, toEthersBigNumber, toRay, waitForTx } from '../helpers'
+import { getContractFactory, impersonateAccount, waitForTx } from '../helpers'
+import { BaseBridgeSdk } from './bridge'
+import { executeSpell } from './spell'
 
 const bytes32 = ethers.utils.formatBytes32String
 
@@ -50,12 +54,22 @@ export async function deployWormhole({
 
   const WormholeOracleAuthFactory = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', defaultSigner)
   const oracleAuth = await WormholeOracleAuthFactory.deploy(join.address)
-  await join.rely(oracleAuth.address)
 
   console.log('Deploying router...')
   const WormholeRouterFactory = getContractFactory<WormholeRouter__factory>('WormholeRouter', defaultSigner)
   const router = await WormholeRouterFactory.deploy(sdk.dai.address)
-  await join.rely(router.address)
+
+  console.log('Finalizing permissions...')
+  await waitForTx(join.rely(oracleAuth.address))
+  await waitForTx(join.rely(router.address))
+  await waitForTx(join.rely(sdk.pause_proxy.address))
+  await waitForTx(join.deny(await defaultSigner.getAddress()))
+
+  await waitForTx(oracleAuth.rely(sdk.pause_proxy.address))
+  await waitForTx(oracleAuth.deny(await defaultSigner.getAddress()))
+
+  await waitForTx(router.rely(sdk.pause_proxy.address))
+  await waitForTx(router.deny(await defaultSigner.getAddress()))
 
   return { join, oracleAuth, router, constantFee }
 }
@@ -69,6 +83,7 @@ export async function configureWormhole({
   domainsCfg,
   oracleAddresses,
   globalLine,
+  baseBridgeSdk,
 }: {
   defaultSigner: Signer
   globalLine: BigNumber
@@ -77,39 +92,46 @@ export async function configureWormhole({
   oracleAddresses: string[]
   sdk: MainnetSdk
   wormholeSdk: WormholeSdk
+  baseBridgeSdk: BaseBridgeSdk
 }) {
-  console.log('Configuring join...')
-  await wormholeSdk.join['file(bytes32,address)'](bytes32('vow'), sdk.vow.address)
+  const L1ConfigureWormholeSpellFactory = getContractFactory<L1ConfigureWormholeSpell__factory>(
+    'L1ConfigureWormholeSpell',
+    defaultSigner,
+  )
+  const configureSpell = await L1ConfigureWormholeSpellFactory.deploy(
+    joinDomain,
+    wormholeSdk.join.address,
+    sdk.vow.address,
+    sdk.vat.address,
+    globalLine,
+    wormholeSdk.router.address,
+  )
+
+  await executeSpell(sdk, configureSpell)
 
   for (const [domainName, domainCfg] of Object.entries(domainsCfg)) {
-    await wormholeSdk.join['file(bytes32,bytes32,address)'](
-      bytes32('fees'),
-      domainName,
-      wormholeSdk.constantFee.address,
+    const L1AddWormholeDomainSpellFactory = getContractFactory<L1AddWormholeDomainSpell__factory>(
+      'L1AddWormholeDomainSpell',
+      defaultSigner,
     )
-    await wormholeSdk.join['file(bytes32,bytes32,uint256)'](bytes32('line'), domainName, domainCfg.line)
+    const addWormholeDomainSpell = await L1AddWormholeDomainSpellFactory.deploy(
+      domainName,
+      wormholeSdk.join.address,
+      wormholeSdk.constantFee.address,
+      domainCfg.line,
+      wormholeSdk.router.address,
+      domainCfg.l1Bridge,
+      baseBridgeSdk.l1Escrow.address,
+      sdk.dai.address,
+    )
+    console.log('Executing spell to add a new domain...')
+    await executeSpell(sdk, addWormholeDomainSpell)
   }
 
   console.log('Configuring oracleAuth...')
-
-  await wormholeSdk.oracleAuth.file(bytes32('threshold'), hexZeroPad(hexlify(oracleAddresses.length), 32))
-  await wormholeSdk.oracleAuth.connect(defaultSigner).addSigners(oracleAddresses)
-
-  console.log('Configuring router')
-  await wormholeSdk.router.file(bytes32('gateway'), joinDomain, wormholeSdk.join.address)
-
-  console.log(`Configuring vat at ${sdk.vat.address}...`)
-  const ilk = await wormholeSdk.join.ilk()
-  const makerGovernanceImpersonator = await impersonateAccount(sdk.pause_proxy.address, defaultSigner.provider! as any)
-  await sdk.vat.connect(makerGovernanceImpersonator).rely(wormholeSdk.join.address)
-  await sdk.vat.connect(makerGovernanceImpersonator).init(ilk)
-  await sdk.vat
-    .connect(makerGovernanceImpersonator)
-    ['file(bytes32,bytes32,uint256)'](ilk, bytes32('spot'), toEthersBigNumber(toRay(1)))
-  await sdk.vat.connect(makerGovernanceImpersonator)['file(bytes32,bytes32,uint256)'](ilk, bytes32('line'), globalLine)
-
-  console.log('Configuring L1 router...')
-  for (const [domainName, domainCfg] of Object.entries(domainsCfg)) {
-    await waitForTx(wormholeSdk.router.file(bytes32('gateway'), domainName, domainCfg.l1Bridge))
-  }
+  const govImpersonator = await impersonateAccount(sdk.pause_proxy.address, sdk.dai.provider as any)
+  await wormholeSdk.oracleAuth
+    .connect(govImpersonator)
+    .file(bytes32('threshold'), hexZeroPad(hexlify(oracleAddresses.length), 32))
+  await wormholeSdk.oracleAuth.connect(govImpersonator).addSigners(oracleAddresses)
 }

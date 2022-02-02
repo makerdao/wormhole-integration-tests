@@ -20,16 +20,32 @@ interface DaiLike {
   function rely(address usr) external;
 }
 
-contract L1DeployWormholeSpell {
-  DaiLike public immutable dai;
-  address public immutable wormholeBridge;
+interface WormholeBridgeLike {
+  function file(
+    bytes32 what,
+    bytes32 domain,
+    uint256 data
+  ) external;
+}
 
-  constructor(DaiLike _dai, address _wormholeBridge) {
+contract L2AddWormholeDomainSpell {
+  DaiLike public immutable dai;
+  WormholeBridgeLike public immutable wormholeBridge;
+  bytes32 public immutable masterDomain;
+
+  constructor(
+    DaiLike _dai,
+    WormholeBridgeLike _wormholeBridge,
+    bytes32 _masterDomain
+  ) {
     dai = _dai;
     wormholeBridge = _wormholeBridge;
+    masterDomain = _masterDomain;
   }
 
   function execute() external {
-    dai.rely(wormholeBridge);
+    dai.rely(address(wormholeBridge));
+
+    wormholeBridge.file(bytes32("validDomains"), masterDomain, 1);
   }
 }

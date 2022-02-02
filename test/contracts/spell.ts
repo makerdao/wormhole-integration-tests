@@ -1,8 +1,9 @@
 import { MainnetSdk } from '@dethcrypto/eth-sdk-client'
-import { BigNumber, Signer, Transaction } from 'ethers'
+import { BigNumber, Contract, Signer } from 'ethers'
+import { TransactionReceipt } from 'ethers/node_modules/@ethersproject/providers'
 
 import { TestBadDebtPushSpell__factory } from '../../typechain/factories/TestBadDebtPushSpell__factory'
-import { deployUsingFactory, getContractFactory, impersonateAccount } from '../helpers'
+import { deployUsingFactory, getContractFactory, impersonateAccount, waitForTx } from '../helpers'
 
 interface SpellDeployOpts {
   l1Signer: Signer
@@ -14,10 +15,7 @@ interface SpellDeployOpts {
 
 export async function deploySpell(
   opts: SpellDeployOpts,
-): Promise<{ castBadDebtPushSpell: () => Promise<Transaction> }> {
-  const pauseAddress = await opts.sdk.pause_proxy.owner()
-  const pauseImpersonator = await impersonateAccount(pauseAddress, opts.l1Signer.provider! as any)
-
+): Promise<{ castBadDebtPushSpell: () => Promise<TransactionReceipt> }> {
   console.log('Deploying TestBadDebtPushSpell...')
   const BadDebtPushSpellFactory = getContractFactory<TestBadDebtPushSpell__factory>(
     'TestBadDebtPushSpell',
@@ -31,10 +29,18 @@ export async function deploySpell(
     opts.sourceDomain,
     opts.badDebt,
   ])
-  const castBadDebtPushSpell = () =>
-    opts.sdk.pause_proxy
-      .connect(pauseImpersonator)
-      .exec(badDebtPushSpell.address, badDebtPushSpell.interface.encodeFunctionData('execute'))
+
+  const castBadDebtPushSpell = () => executeSpell(opts.sdk, badDebtPushSpell)
 
   return { castBadDebtPushSpell }
+}
+
+export async function executeSpell(sdk: MainnetSdk, spell: Contract): Promise<TransactionReceipt> {
+  const provider = sdk.dai.provider! as any
+  const pauseAddress = await sdk.pause_proxy.owner()
+  const pauseImpersonator = await impersonateAccount(pauseAddress, provider)
+
+  return await waitForTx(
+    sdk.pause_proxy.connect(pauseImpersonator).exec(spell.address, spell.interface.encodeFunctionData('execute')),
+  )
 }

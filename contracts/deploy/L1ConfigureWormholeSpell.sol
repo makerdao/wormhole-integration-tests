@@ -28,28 +28,81 @@ interface VatLike {
   ) external;
 }
 
-contract L1DeployWormholeSpell {
+interface WormholeJoinLike {
+  function file(bytes32 what, address val) external;
+
+  function file(
+    bytes32 what,
+    bytes32 domain_,
+    uint256 data
+  ) external;
+
+  function file(
+    bytes32 what,
+    bytes32 domain_,
+    address data
+  ) external;
+
+  function ilk() external returns (bytes32);
+}
+
+interface OracleAuthLike {
+  function file(bytes32 what, uint256 data) external;
+
+  function addSigners(address[] calldata signers_) external;
+}
+
+interface RouterLike {
+  function file(
+    bytes32 what,
+    bytes32 domain,
+    address data
+  ) external;
+}
+
+interface L1Escrow {
+  function approve(
+    address token,
+    address spender,
+    uint256 value
+  ) external;
+}
+
+contract L1ConfigureWormholeSpell {
   uint256 public constant RAY = 10**27;
 
+  bytes32 public immutable masterDomain;
+
+  WormholeJoinLike public immutable wormholeJoin;
+  address public immutable vow;
+
   VatLike public immutable vat;
-  address public immutable wormholeJoin;
   uint256 public immutable line;
-  bytes32 public immutable ilk;
+
+  RouterLike public immutable router;
 
   constructor(
+    bytes32 _masterDomain,
+    WormholeJoinLike _wormholeJoin,
+    address _vow,
     VatLike _vat,
-    address _wormholeJoin,
     uint256 _line,
-    bytes32 _ilk
+    RouterLike _router
   ) {
+    masterDomain = _masterDomain;
     wormholeJoin = _wormholeJoin;
+    vow = _vow;
     vat = _vat;
     line = _line;
-    ilk = _ilk;
+    router = _router;
   }
 
   function execute() external {
-    vat.rely(wormholeJoin);
+    wormholeJoin.file(bytes32("vow"), vow);
+    router.file(bytes32("gateway"), masterDomain, address(wormholeJoin));
+
+    vat.rely(address(wormholeJoin));
+    bytes32 ilk = wormholeJoin.ilk();
     vat.init(ilk);
     vat.file(ilk, bytes32("spot"), RAY);
     vat.file(ilk, bytes32("line"), line);
