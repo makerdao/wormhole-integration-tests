@@ -8,9 +8,19 @@ export default defineConfig({
       vow: '0xA950524441892A31ebddF91d3cEEFa04Bf454466',
       dai: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
       pause_proxy: '0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB',
+      esm: '0x29CfBd381043D00a98fD9904a431015Fef07af2f',
       optimism: {
         xDomainMessenger: '0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1',
         l1StandardBridge: '0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1',
+      },
+    },
+
+    optimism: {
+      dai: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+      governanceRelay: '0x10E6593CDda8c58a1d0f14C5164B376352a55f2F',
+      optimism: {
+        xDomainMessenger: '0x4200000000000000000000000000000000000007',
+        l2StandardBridge: '0x4200000000000000000000000000000000000010',
       },
     },
 
@@ -21,6 +31,7 @@ export default defineConfig({
       vow: '0x0F4Cbe6CBA918b7488C26E29d9ECd7368F38EA3b',
       dai: '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa',
       pause_proxy: '0x0e4725db88Bb038bBa4C4723e91Ba183BE11eDf3',
+      esm: '0xD5D728446275B0A12E4a4038527974b92353B4a9',
       l1Escrow: '0x467194771dAe2967Aef3ECbEDD3Bf9a310C76C65',
       optimism: {
         xDomainMessenger: '0x4361d0F75A0186C05f971c566dC6bEa5957483fD',
@@ -30,6 +41,7 @@ export default defineConfig({
     },
     optimismKovan: {
       dai: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+      governanceRelay: '0x10E6593CDda8c58a1d0f14C5164B376352a55f2F',
       optimism: {
         xDomainMessenger: '0x4200000000000000000000000000000000000007',
         l2StandardBridge: '0x4200000000000000000000000000000000000010',

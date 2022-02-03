@@ -16,7 +16,9 @@
     "test:fix": "yarn lint:fix && yarn format:fix && yarn test && yarn typecheck"
   },
   "dependencies": {
-    "hardhat": "^2.6.8"
+    "@types/lodash": "^4.14.178",
+    "hardhat": "^2.6.8",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@dethcrypto/eth-sdk": "^0.2.4",
