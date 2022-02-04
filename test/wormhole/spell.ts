@@ -8,7 +8,7 @@ import {
   PushBadDebtSpell__factory,
   WormholeConstantFee__factory,
 } from '../../typechain/'
-import { deployUsingFactory, getContractFactory, impersonateAccount,waitForTx } from '../helpers'
+import { deployUsingFactory, getContractFactory, impersonateAccount, waitForTx } from '../helpers'
 
 interface PushBadDebtSpellDeployOpts {
   l1Signer: Signer
@@ -101,7 +101,9 @@ export async function executeSpell(
   const pauseSigner = await getPauseSigner(sdk, l1Signer)
   console.log(`Executing spell ${spell.address}...`)
   return await waitForTx(
-    sdk.pause_proxy.connect(pauseSigner).exec(spell.address, spell.interface.encodeFunctionData('execute')),
+    sdk.pause_proxy
+      .connect(pauseSigner)
+      .exec(spell.address, spell.interface.encodeFunctionData('execute'), { gasLimit: 1500000 }),
   )
 }
 
