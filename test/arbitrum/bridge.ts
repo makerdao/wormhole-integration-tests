@@ -94,8 +94,8 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
   console.log('L1DaiGateway deployed at: ', l1DaiGateway.address)
 
   // bridge has to be approved on escrow because settling moves tokens
-  await l1Escrow.approve(opts.sdk.dai.address, l1DaiGateway.address, constants.MaxUint256)
-  await l1Escrow.rely(opts.sdk.pause_proxy.address)
+  await waitForTx(l1Escrow.approve(opts.sdk.dai.address, l1DaiGateway.address, constants.MaxUint256))
+  await waitForTx(l1Escrow.rely(opts.sdk.pause_proxy.address))
 
   return {
     l2Dai,

@@ -1,6 +1,7 @@
 import { getRinkebySdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { sleep } from '@eth-optimism/core-utils'
 import { ethers } from 'hardhat'
+import { waitForTx } from '../helpers'
 
 import { deployWormhole, DomainSetupOpts, DomainSetupResult } from '../wormhole'
 import {
@@ -71,8 +72,8 @@ export async function setupArbitrumTests({
   const relayMessagesToL1 = makeRelayTxToL1(wormholeBridgeSdk.l2WormholeBridge, l1Sdk, l1Signer)
 
   console.log('Moving some DAI to L2...')
-  await l1Sdk.dai.connect(l1Signer).transfer(l1User.address, l2DaiAmount)
-  await l1Sdk.dai.connect(l1User).approve(baseBridgeSdk.l1DaiTokenBridge.address, l2DaiAmount)
+  await waitForTx(l1Sdk.dai.connect(l1Signer).transfer(l1User.address, l2DaiAmount))
+  await waitForTx(l1Sdk.dai.connect(l1User).approve(baseBridgeSdk.l1DaiTokenBridge.address, l2DaiAmount))
   await waitToRelayTxsToArbitrumL2(
     depositToStandardBridge({
       l2Provider: l2Provider,
