@@ -89,8 +89,8 @@ export async function deployOptimismBaseBridge(opts: OptimismBaseBridgeDeployOpt
   expect(l1DaiTokenBridge.address).to.be.eq(futureL1DAITokenBridgeAddress, 'Future address doesnt match actual address')
 
   // bridge has to be approved on escrow because settling moves tokens
-  await l1Escrow.approve(opts.sdk.dai.address, l1DaiTokenBridge.address, constants.MaxUint256)
-  await l1Escrow.rely(opts.sdk.pause_proxy.address)
+  await waitForTx(l1Escrow.approve(opts.sdk.dai.address, l1DaiTokenBridge.address, constants.MaxUint256))
+  await waitForTx(l1Escrow.rely(opts.sdk.pause_proxy.address))
 
   return {
     l2Dai,
