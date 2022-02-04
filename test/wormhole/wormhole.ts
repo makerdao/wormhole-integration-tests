@@ -1,10 +1,12 @@
-import { MainnetSdk } from '@dethcrypto/eth-sdk-client'
+import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { BigNumber, BigNumberish, Signer } from 'ethers'
+import { ethers } from 'hardhat'
 import { assert, Dictionary } from 'ts-essentials'
 
 import {
   L1AddWormholeDomainSpell__factory,
   L1ConfigureWormholeSpell__factory,
+  L1Escrow,
   WormholeConstantFee,
   WormholeConstantFee__factory,
   WormholeJoin,
@@ -15,8 +17,16 @@ import {
   WormholeRouter__factory,
 } from '../../typechain'
 import { getContractFactory, waitForTx } from '../helpers'
-import { BaseBridgeSdk } from './bridge'
 import { executeSpell } from './spell'
+
+interface BaseBridgeSdk {
+  l1Escrow: L1Escrow
+}
+
+const bytes32 = ethers.utils.formatBytes32String
+
+export const optimismDomain = bytes32('OPTIMISM-A')
+export const arbitrumDomain = bytes32('ARBITRUM-A')
 
 export const OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME = 60 * 60 * 24 * 8 // flush should happen more or less, 1 day after initWormhole, and should take 7 days to finalize
 
@@ -29,7 +39,7 @@ export async function deployWormhole({
   globalFeeTTL,
 }: {
   defaultSigner: Signer
-  sdk: MainnetSdk
+  sdk: MainnetSdk | RinkebySdk
   ilk: string
   joinDomain: string
   globalFee: BigNumberish
@@ -40,20 +50,25 @@ export async function deployWormhole({
   router: WormholeRouter
   constantFee: WormholeConstantFee
 }> {
+  console.log('Deploying join...')
   const WormholeJoinFactory = getContractFactory<WormholeJoin__factory>('WormholeJoin', defaultSigner)
   const join = await WormholeJoinFactory.deploy(sdk.vat.address, sdk.dai_join.address, ilk, joinDomain)
   console.log('WormholeJoin deployed at: ', join.address)
 
+  console.log('Deploying constantFee...')
   const ConstantFeeFactory = getContractFactory<WormholeConstantFee__factory>('WormholeConstantFee', defaultSigner)
   const constantFee = await ConstantFeeFactory.deploy(globalFee, globalFeeTTL)
   console.log('ConstantFee deployed at: ', constantFee.address)
 
+  console.log('Deploying oracleAuth...')
   const WormholeOracleAuthFactory = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', defaultSigner)
   const oracleAuth = await WormholeOracleAuthFactory.deploy(join.address)
+  console.log('WormholeOracleAuth deployed at: ', oracleAuth.address)
 
   console.log('Deploying router...')
   const WormholeRouterFactory = getContractFactory<WormholeRouter__factory>('WormholeRouter', defaultSigner)
   const router = await WormholeRouterFactory.deploy(sdk.dai.address)
+  console.log('WormholeRouter deployed at: ', router.address)
 
   console.log('Finalizing permissions...')
   await waitForTx(join.rely(oracleAuth.address))
@@ -86,7 +101,7 @@ export async function configureWormhole({
   domainsCfg: Dictionary<{ line: BigNumber; l1Bridge: string }>
   joinDomain: string
   oracleAddresses: string[]
-  sdk: MainnetSdk
+  sdk: MainnetSdk | RinkebySdk
   wormholeSdk: WormholeSdk
   baseBridgeSdk: BaseBridgeSdk
 }) {
@@ -109,7 +124,7 @@ export async function configureWormhole({
     oracleAddresses[2],
   )
 
-  await executeSpell(sdk, configureSpell)
+  await executeSpell(defaultSigner, sdk, configureSpell)
 
   for (const [domainName, domainCfg] of Object.entries(domainsCfg)) {
     const L1AddWormholeDomainSpellFactory = getContractFactory<L1AddWormholeDomainSpell__factory>(
@@ -126,7 +141,7 @@ export async function configureWormhole({
       baseBridgeSdk.l1Escrow.address,
       sdk.dai.address,
     )
-    console.log('Executing spell to add a new domain...')
-    await executeSpell(sdk, addWormholeDomainSpell)
+    console.log(`Executing spell to add domain ${domainName}...`)
+    await executeSpell(defaultSigner, sdk, addWormholeDomainSpell)
   }
 }

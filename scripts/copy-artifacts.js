@@ -36,7 +36,8 @@ function copyHardhatArtifact(filePath, destinationDirPath) {
 }
 
 const dappToolsArtifacts = join(__dirname, '../repos/dss-wormhole/out/')
-const hardhatBridgeArtifacts = join(__dirname, '../repos/optimism-dai-bridge/artifacts/contracts/')
+const hardhatOptimismBridgeArtifacts = join(__dirname, '../repos/optimism-dai-bridge/artifacts/contracts/')
+const hardhatArbitrumBridgeArtifacts = join(__dirname, '../repos/arbitrum-dai-bridge/artifacts/contracts/')
 const hardhatTestArtifacts = join(__dirname, '../artifacts/contracts')
 const output = join(__dirname, '../external-artifacts')
 
@@ -49,16 +50,36 @@ copyDappToolsArtifact(dappToolsArtifacts, 'WormholeJoin', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeConstantFee', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeOracleAuth', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeRouter', output)
-copyHardhatArtifact(join(hardhatBridgeArtifacts, 'l1/L1DAITokenBridge.sol/L1DAITokenBridge.json'), output)
-copyHardhatArtifact(join(hardhatBridgeArtifacts, 'l2/dai.sol/Dai.json'), output)
-copyHardhatArtifact(join(hardhatBridgeArtifacts, 'l2/L2DAITokenBridge.sol/L2DAITokenBridge.json'), output)
-copyHardhatArtifact(join(hardhatBridgeArtifacts, 'l1/L1DAIWormholeBridge.sol/L1DAIWormholeBridge.json'), output)
-copyHardhatArtifact(join(hardhatBridgeArtifacts, 'l1/L1Escrow.sol/L1Escrow.json'), output)
-copyHardhatArtifact(join(hardhatBridgeArtifacts, 'l2/L2DAIWormholeBridge.sol/L2DAIWormholeBridge.json'), output)
-copyHardhatArtifact(join(hardhatTestArtifacts, 'test/TestBadDebtPushSpell.sol/TestBadDebtPushSpell.json'), output)
-copyHardhatArtifact(join(hardhatTestArtifacts, 'test/TestBadDebtPushSpell.sol/DaiJoinLike.json'), output)
-copyHardhatArtifact(join(hardhatTestArtifacts, 'test/TestBadDebtPushSpell.sol/VatLike.json'), output)
-copyHardhatArtifact(join(hardhatTestArtifacts, 'test/TestBadDebtPushSpell.sol/WormholeJoinLike.json'), output)
+
+copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l1/L1DAITokenBridge.sol/L1DAITokenBridge.json'), output)
+copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l2/dai.sol/Dai.json'), output)
+copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l2/L2DAITokenBridge.sol/L2DAITokenBridge.json'), output)
+copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l1/L1DAIWormholeBridge.sol/L1DAIWormholeBridge.json'), output)
+copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l1/L1Escrow.sol/L1Escrow.json'), output)
+copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l2/L2DAIWormholeBridge.sol/L2DAIWormholeBridge.json'), output)
+
+copyHardhatArtifact(join(hardhatArbitrumBridgeArtifacts, 'l1/L1DaiGateway.sol/L1DaiGateway.json'), output)
+copyHardhatArtifact(join(hardhatArbitrumBridgeArtifacts, 'l2/L2DaiGateway.sol/L2DaiGateway.json'), output)
+copyHardhatArtifact(
+  join(hardhatArbitrumBridgeArtifacts, 'l2/L2CrossDomainEnabled.sol/L2CrossDomainEnabled.json'),
+  output,
+)
+copyHardhatArtifact(
+  join(hardhatArbitrumBridgeArtifacts, 'l1/L1DaiWormholeGateway.sol/L1DaiWormholeGateway.json'),
+  output,
+)
+copyHardhatArtifact(
+  join(hardhatArbitrumBridgeArtifacts, 'l2/L2DaiWormholeGateway.sol/L2DaiWormholeGateway.json'),
+  output,
+)
+
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/FileJoinFeesSpell.sol/FileJoinFeesSpell.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/FileJoinLineSpell.sol/FileJoinLineSpell.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/PushBadDebtSpell.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/DaiJoinLike.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/VatLike.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/WormholeJoinLike.json'), output)
+
 copyHardhatArtifact(
   join(hardhatTestArtifacts, 'deploy/L1AddWormholeDomainSpell.sol/L1AddWormholeDomainSpell.json'),
   output,

@@ -1,6 +1,9 @@
 [submodule "repos/optimism-dai-bridge"]
 	path = repos/optimism-dai-bridge
 	url = https://github.com/makerdao/optimism-dai-bridge
+[submodule "repos/arbitrum-dai-bridge"]
+	path = repos/arbitrum-dai-bridge
+	url = https://github.com/makerdao/arbitrum-dai-bridge.git
 [submodule "repos/optimism-monorepo"]
 	path = repos/optimism-monorepo
 	url = https://github.com/ethereum-optimism/optimism.git

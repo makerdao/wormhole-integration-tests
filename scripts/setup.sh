@@ -16,6 +16,12 @@ yarn
 yarn build
 cd ..
 
+echo "Setting up arbitrum-dai-bridge"
+cd arbitrum-dai-bridge
+yarn
+yarn build
+cd ..
+
 cd ..
 
 echo "Setting up local test contracts"

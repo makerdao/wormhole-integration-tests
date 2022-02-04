@@ -1,26 +1,28 @@
-import { MainnetSdk } from '@dethcrypto/eth-sdk-client'
-import { BigNumber, Contract, Signer } from 'ethers'
-import { TransactionReceipt } from 'ethers/node_modules/@ethersproject/providers'
+import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
+import { JsonRpcProvider, TransactionReceipt } from '@ethersproject/providers'
+import { BigNumber, BigNumberish, Contract, Signer } from 'ethers'
 
-import { TestBadDebtPushSpell__factory } from '../../typechain/factories/TestBadDebtPushSpell__factory'
-import { deployUsingFactory, getContractFactory, impersonateAccount, waitForTx } from '../helpers'
+import {
+  FileJoinFeesSpell__factory,
+  FileJoinLineSpell__factory,
+  PushBadDebtSpell__factory,
+  WormholeConstantFee__factory,
+} from '../../typechain/'
+import { deployUsingFactory, getContractFactory, impersonateAccount,waitForTx } from '../helpers'
 
-interface SpellDeployOpts {
+interface PushBadDebtSpellDeployOpts {
   l1Signer: Signer
-  sdk: MainnetSdk
+  sdk: MainnetSdk | RinkebySdk
   wormholeJoinAddress: string
   sourceDomain: string
   badDebt: BigNumber
 }
 
-export async function deployBadDebtPushSpell(
-  opts: SpellDeployOpts,
+export async function deployPushBadDebtSpell(
+  opts: PushBadDebtSpellDeployOpts,
 ): Promise<{ castBadDebtPushSpell: () => Promise<TransactionReceipt> }> {
-  console.log('Deploying TestBadDebtPushSpell...')
-  const BadDebtPushSpellFactory = getContractFactory<TestBadDebtPushSpell__factory>(
-    'TestBadDebtPushSpell',
-    opts.l1Signer,
-  )
+  console.log('Deploying PushBadDebtSpell...')
+  const BadDebtPushSpellFactory = getContractFactory<PushBadDebtSpell__factory>('PushBadDebtSpell', opts.l1Signer)
   const badDebtPushSpell = await deployUsingFactory(opts.l1Signer, BadDebtPushSpellFactory, [
     opts.wormholeJoinAddress,
     opts.sdk.vat.address,
@@ -30,17 +32,81 @@ export async function deployBadDebtPushSpell(
     opts.badDebt,
   ])
 
-  const castBadDebtPushSpell = () => executeSpell(opts.sdk, badDebtPushSpell)
+  const castBadDebtPushSpell = () => executeSpell(opts.l1Signer, opts.sdk, badDebtPushSpell)
 
   return { castBadDebtPushSpell }
 }
 
-export async function executeSpell(sdk: MainnetSdk, spell: Contract): Promise<TransactionReceipt> {
-  const provider = sdk.dai.provider! as any
-  const pauseAddress = await sdk.pause_proxy.owner()
-  const pauseImpersonator = await impersonateAccount(pauseAddress, provider)
+interface FileJoinLineSpellDeployOpts {
+  l1Signer: Signer
+  sdk: MainnetSdk | RinkebySdk
+  wormholeJoinAddress: string
+  sourceDomain: string
+  line: BigNumber
+}
 
+export async function deployFileJoinLineSpell(
+  opts: FileJoinLineSpellDeployOpts,
+): Promise<{ castFileJoinLineSpell: () => Promise<TransactionReceipt> }> {
+  console.log('Deploying FileJoinLineSpell...')
+  const FileJoinLineSpellFactory = getContractFactory<FileJoinLineSpell__factory>('FileJoinLineSpell', opts.l1Signer)
+  const fileJoinLineSpell = await deployUsingFactory(opts.l1Signer, FileJoinLineSpellFactory, [
+    opts.wormholeJoinAddress,
+    opts.sourceDomain,
+    opts.line,
+  ])
+  console.log('FileJoinLineSpell deployed at: ', fileJoinLineSpell.address)
+
+  const castFileJoinLineSpell = () => executeSpell(opts.l1Signer, opts.sdk, fileJoinLineSpell)
+
+  return { castFileJoinLineSpell }
+}
+
+interface FileJoinFeesSpellDeployOpts {
+  l1Signer: Signer
+  sdk: MainnetSdk | RinkebySdk
+  wormholeJoinAddress: string
+  sourceDomain: string
+  fee: BigNumberish
+  ttl: number
+}
+
+export async function deployFileJoinFeesSpell(
+  opts: FileJoinFeesSpellDeployOpts,
+): Promise<{ castFileJoinFeesSpell: () => Promise<TransactionReceipt> }> {
+  console.log('Deploying WormholeConstantFee...')
+  const ConstantFeeFactory = getContractFactory<WormholeConstantFee__factory>('WormholeConstantFee', opts.l1Signer)
+  const constantFee = await ConstantFeeFactory.deploy(opts.fee, opts.ttl)
+  console.log('WormholeConstantFee deployed at: ', constantFee.address)
+
+  console.log('Deploying FileJoinFeesSpell...')
+  const FileJoinFeesSpellFactory = getContractFactory<FileJoinFeesSpell__factory>('FileJoinFeesSpell', opts.l1Signer)
+  const fileJoinFeesSpell = await deployUsingFactory(opts.l1Signer, FileJoinFeesSpellFactory, [
+    opts.wormholeJoinAddress,
+    opts.sourceDomain,
+    constantFee.address,
+  ])
+  console.log('FileJoinFeesSpell deployed at: ', fileJoinFeesSpell.address)
+
+  const castFileJoinFeesSpell = () => executeSpell(opts.l1Signer, opts.sdk, fileJoinFeesSpell)
+
+  return { castFileJoinFeesSpell }
+}
+
+export async function executeSpell(
+  l1Signer: Signer,
+  sdk: MainnetSdk | RinkebySdk,
+  spell: Contract,
+): Promise<TransactionReceipt> {
+  const pauseSigner = await getPauseSigner(sdk, l1Signer)
+  console.log(`Executing spell ${spell.address}...`)
   return await waitForTx(
-    sdk.pause_proxy.connect(pauseImpersonator).exec(spell.address, spell.interface.encodeFunctionData('execute')),
+    sdk.pause_proxy.connect(pauseSigner).exec(spell.address, spell.interface.encodeFunctionData('execute')),
   )
+}
+
+export async function getPauseSigner(sdk: MainnetSdk | RinkebySdk, l1Signer: Signer): Promise<Signer> {
+  const pauseAddress = await sdk.pause_proxy.owner()
+  if ((await l1Signer.getAddress()) === pauseAddress) return l1Signer // on rinkeby, the l1Signer is the owner of the pause_proxy
+  return await impersonateAccount(pauseAddress, l1Signer.provider as JsonRpcProvider) // on mainnet-fork, we impersonate the owner of the pause_proxy
 }

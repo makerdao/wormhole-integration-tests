@@ -39,6 +39,7 @@ export default defineConfig({
         stateCommitmentChain: '0xD7754711773489F31A0602635f3F167826ce53C5',
       },
     },
+
     optimismKovan: {
       dai: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
       governanceRelay: '0x10E6593CDda8c58a1d0f14C5164B376352a55f2F',
@@ -46,6 +47,15 @@ export default defineConfig({
         xDomainMessenger: '0x4200000000000000000000000000000000000007',
         l2StandardBridge: '0x4200000000000000000000000000000000000010',
       },
+    },
+
+    rinkeby: {
+      vat: '0x66b3D63621FDD5967603A824114Da95cc3A35107',
+      dai_join: '0x6a4017c221335db1eD44C89C3d12841924EeCB79',
+      vow: '0xD9dFdf1f1604eF572EFd9c8c2e5c6DDca659150A',
+      pause_proxy: '0x4463830546A8cFcFa1b6Eb660Df17A29a4F4e06F',
+      dai: '0x17B729a6Ac1f265090cbb4AecBdd53E34664C00e',
+      fake_bridge: '0xc710c7eed1f6d29bc4251c1064f5b27824af72b8', // modified arbitrum bridge allowing arbitrary L2>L1 message passing without delay
     },
   },
 })

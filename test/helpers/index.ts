@@ -1,3 +1,4 @@
+export * from '../arbitrum/addresses'
 export * from '../optimism/addresses'
 export * from './artifacts'
 export * from './gas'

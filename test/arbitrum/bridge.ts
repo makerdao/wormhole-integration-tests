@@ -1,0 +1,108 @@
+import { RinkebySdk } from '@dethcrypto/eth-sdk-client'
+import { expect } from 'chai'
+import { constants, Signer, Wallet } from 'ethers'
+
+import {
+  Dai__factory,
+  L1DaiGateway__factory,
+  L1DaiWormholeGateway__factory,
+  L1Escrow__factory,
+  L2DaiGateway__factory,
+  L2DaiWormholeGateway__factory,
+} from '../../typechain'
+import { ArbitrumAddresses, deployUsingFactory, getContractFactory, waitForTx } from '../helpers'
+import { getAddressOfNextDeployedContract } from '../pe-utils/address'
+import { WormholeSdk } from '../wormhole/wormhole'
+
+interface ArbitrumWormholeBridgeDeployOpts {
+  l1Signer: Signer
+  l2Signer: Signer
+  rinkebySdk: RinkebySdk
+  arbitrumAddresses: ArbitrumAddresses
+  domain: string
+  wormholeSdk: WormholeSdk
+  baseBridgeSdk: ArbitrumBaseBridgeSdk
+}
+
+export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeDeployOpts) {
+  console.log('Deploying Arbitrum Wormhole Bridge...')
+  const futureL1WormholeBridgeAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
+  const L2WormholeBridgeFactory = getContractFactory<L2DaiWormholeGateway__factory>(
+    'L2DaiWormholeGateway',
+    opts.l2Signer,
+  )
+  const l2WormholeBridge = await deployUsingFactory(opts.l2Signer, L2WormholeBridgeFactory, [
+    opts.baseBridgeSdk.l2Dai.address,
+    futureL1WormholeBridgeAddress,
+    opts.domain,
+  ])
+  console.log('L2DaiWormholeGateway deployed at: ', l2WormholeBridge.address)
+
+  const L1WormholeBridgeFactory = getContractFactory<L1DaiWormholeGateway__factory>('L1DaiWormholeGateway')
+  const l1WormholeBridge = await deployUsingFactory(opts.l1Signer, L1WormholeBridgeFactory, [
+    opts.rinkebySdk.dai.address,
+    l2WormholeBridge.address,
+    opts.arbitrumAddresses.l1.fake_inbox, // use a fake inbox that allows relaying arbitrary L2>L1 messages without delay
+    opts.baseBridgeSdk.l1Escrow.address,
+    opts.wormholeSdk.router.address,
+  ])
+  expect(l1WormholeBridge.address).to.be.eq(futureL1WormholeBridgeAddress, 'Future address doesnt match actual address')
+  console.log('L1DaiWormholeGateway deployed at: ', l1WormholeBridge.address)
+
+  return { l2WormholeBridge, l1WormholeBridge }
+}
+
+interface ArbitrumBaseBridgeDeployOpts {
+  l1Signer: Signer
+  l2Signer: Signer
+  sdk: RinkebySdk
+  arbitrumAddresses: ArbitrumAddresses
+}
+
+export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpts) {
+  const l1Escrow = await deployUsingFactory(opts.l1Signer, getContractFactory<L1Escrow__factory>('L1Escrow'), [])
+  console.log('L1Escrow deployed at: ', l1Escrow.address)
+
+  const l1Router = Wallet.createRandom()
+  const l2Router = Wallet.createRandom()
+
+  console.log('Deploying Arbitrum Base Bridge...')
+  const l2Dai = await deployUsingFactory(opts.l2Signer, getContractFactory<Dai__factory>('Dai', opts.l2Signer), [])
+
+  const futureL1DaiGatewayAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
+  const l2DaiGateway = await deployUsingFactory(
+    opts.l2Signer,
+    getContractFactory<L2DaiGateway__factory>('L2DaiGateway'),
+    [futureL1DaiGatewayAddress, l2Router.address, opts.sdk.dai.address, l2Dai.address],
+  )
+  console.log('L2DaiGateway deployed at: ', l2DaiGateway.address)
+  await waitForTx(l2Dai.rely(l2DaiGateway.address))
+
+  const l1DaiGateway = await deployUsingFactory(
+    opts.l1Signer,
+    getContractFactory<L1DaiGateway__factory>('L1DaiGateway'),
+    [
+      l2DaiGateway.address,
+      l1Router.address,
+      opts.arbitrumAddresses.l1.inbox,
+      opts.sdk.dai.address,
+      l2Dai.address,
+      l1Escrow.address,
+    ],
+  )
+  expect(l1DaiGateway.address).to.be.eq(futureL1DaiGatewayAddress, 'Future address doesnt match actual address')
+  console.log('L1DaiGateway deployed at: ', l1DaiGateway.address)
+
+  // bridge has to be approved on escrow because settling moves tokens
+  await l1Escrow.approve(opts.sdk.dai.address, l1DaiGateway.address, constants.MaxUint256)
+  await l1Escrow.rely(opts.sdk.pause_proxy.address)
+
+  return {
+    l2Dai,
+    l1DaiTokenBridge: l1DaiGateway,
+    l2DaiTokenBridge: l2DaiGateway,
+    l1Escrow,
+  }
+}
+
+export type ArbitrumBaseBridgeSdk = Awaited<ReturnType<typeof deployArbitrumBaseBridge>>
