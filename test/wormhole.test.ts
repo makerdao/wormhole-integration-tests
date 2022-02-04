@@ -7,11 +7,6 @@ import { BigNumberish, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
 import { Dai, L1Escrow, L2DAIWormholeBridge, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../typechain'
-import { getAttestations } from './contracts/attestations'
-import { configureWormholeBridge, deployBaseBridge, deployBridge } from './contracts/bridge'
-import { mintDai } from './contracts/dai'
-import { deploySpell } from './contracts/spell'
-import { configureWormhole, deployWormhole, OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME } from './contracts/wormholeJoin'
 import {
   forwardTime,
   getOptimismAddresses,
@@ -34,6 +29,11 @@ import {
   RelayMessagesToL1,
   WaitToRelayTxsToL2,
 } from './optimism'
+import { getAttestations } from './wormhole/attestations'
+import { configureWormholeBridge, deployBaseBridge, deployBridge } from './wormhole/bridge'
+import { mintDai } from './wormhole/dai'
+import { deployBadDebtPushSpell } from './wormhole/spell'
+import { configureWormhole, deployWormhole, OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME } from './wormhole/wormhole'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings
 const bytes32 = ethers.utils.formatBytes32String
@@ -437,7 +437,7 @@ describe('Wormhole', () => {
       expect(await join.debt(optimismDomain)).to.be.eq(amt)
 
       // Deploy and cast bad debt reconciliation spell on L1
-      const { castBadDebtPushSpell } = await deploySpell({
+      const { castBadDebtPushSpell } = await deployBadDebtPushSpell({
         l1Signer,
         sdk: mainnetSdk,
         wormholeJoinAddress: join.address,

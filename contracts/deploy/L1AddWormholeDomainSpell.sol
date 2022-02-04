@@ -16,21 +16,7 @@
 
 pragma solidity 0.8.9;
 
-interface VatLike {
-  function rely(address usr) external;
-
-  function init(bytes32 ilk) external;
-
-  function file(
-    bytes32 ilk,
-    bytes32 what,
-    uint256 data
-  ) external;
-}
-
 interface WormholeJoinLike {
-  function file(bytes32 what, address val) external;
-
   function file(
     bytes32 what,
     bytes32 domain_,
@@ -42,14 +28,6 @@ interface WormholeJoinLike {
     bytes32 domain_,
     address data
   ) external;
-
-  function ilk() external returns (bytes32);
-}
-
-interface OracleAuthLike {
-  function file(bytes32 what, uint256 data) external;
-
-  function addSigners(address[] calldata signers_) external;
 }
 
 interface RouterLike {
@@ -71,7 +49,7 @@ interface L1Escrow {
 contract L1AddWormholeDomainSpell {
   uint256 public constant RAY = 10**27;
 
-  bytes32 public immutable slaveDomainA;
+  bytes32 public immutable slaveDomain;
 
   WormholeJoinLike public immutable wormholeJoin;
   address public immutable constantFees;
@@ -79,37 +57,37 @@ contract L1AddWormholeDomainSpell {
   uint256 public immutable line;
 
   RouterLike public immutable router;
-  address public immutable slaveDomainABridge;
+  address public immutable slaveDomainBridge;
 
   L1Escrow public immutable escrow;
   address public immutable dai;
 
   constructor(
-    bytes32 _slaveDomainA,
+    bytes32 _slaveDomain,
     WormholeJoinLike _wormholeJoin,
     address _constantFees,
     uint256 _line,
     RouterLike _router,
-    address _slaveDomainABridge,
+    address _slaveDomainBridge,
     L1Escrow _escrow,
     address _dai
   ) {
-    slaveDomainA = _slaveDomainA;
+    slaveDomain = _slaveDomain;
     wormholeJoin = _wormholeJoin;
     constantFees = _constantFees;
     line = _line;
     router = _router;
-    slaveDomainABridge = _slaveDomainABridge;
+    slaveDomainBridge = _slaveDomainBridge;
     escrow = _escrow;
     dai = _dai;
   }
 
   function execute() external {
-    router.file(bytes32("gateway"), slaveDomainA, slaveDomainABridge);
+    router.file(bytes32("gateway"), slaveDomain, slaveDomainBridge);
 
-    wormholeJoin.file(bytes32("fees"), slaveDomainA, constantFees);
-    wormholeJoin.file(bytes32("line"), slaveDomainA, line);
+    wormholeJoin.file(bytes32("fees"), slaveDomain, constantFees);
+    wormholeJoin.file(bytes32("line"), slaveDomain, line);
 
-    escrow.approve(dai, slaveDomainABridge, type(uint256).max);
+    escrow.approve(dai, slaveDomainBridge, type(uint256).max);
   }
 }

@@ -13,7 +13,7 @@ interface SpellDeployOpts {
   badDebt: BigNumber
 }
 
-export async function deploySpell(
+export async function deployBadDebtPushSpell(
   opts: SpellDeployOpts,
 ): Promise<{ castBadDebtPushSpell: () => Promise<TransactionReceipt> }> {
   console.log('Deploying TestBadDebtPushSpell...')

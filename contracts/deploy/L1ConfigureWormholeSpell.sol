@@ -31,18 +31,6 @@ interface VatLike {
 interface WormholeJoinLike {
   function file(bytes32 what, address val) external;
 
-  function file(
-    bytes32 what,
-    bytes32 domain_,
-    uint256 data
-  ) external;
-
-  function file(
-    bytes32 what,
-    bytes32 domain_,
-    address data
-  ) external;
-
   function ilk() external returns (bytes32);
 }
 
@@ -60,14 +48,6 @@ interface RouterLike {
   ) external;
 }
 
-interface L1Escrow {
-  function approve(
-    address token,
-    address spender,
-    uint256 value
-  ) external;
-}
-
 contract L1ConfigureWormholeSpell {
   uint256 public constant RAY = 10**27;
 
@@ -81,13 +61,22 @@ contract L1ConfigureWormholeSpell {
 
   RouterLike public immutable router;
 
+  OracleAuthLike public immutable oracleAuth;
+  address public immutable oracle1;
+  address public immutable oracle2;
+  address public immutable oracle3;
+
   constructor(
     bytes32 _masterDomain,
     WormholeJoinLike _wormholeJoin,
     address _vow,
     VatLike _vat,
     uint256 _line,
-    RouterLike _router
+    RouterLike _router,
+    OracleAuthLike _oracleAuth,
+    address _oracle1,
+    address _oracle2,
+    address _oracle3
   ) {
     masterDomain = _masterDomain;
     wormholeJoin = _wormholeJoin;
@@ -95,6 +84,10 @@ contract L1ConfigureWormholeSpell {
     vat = _vat;
     line = _line;
     router = _router;
+    oracleAuth = _oracleAuth;
+    oracle1 = _oracle1;
+    oracle2 = _oracle2;
+    oracle3 = _oracle3;
   }
 
   function execute() external {
@@ -106,5 +99,12 @@ contract L1ConfigureWormholeSpell {
     vat.init(ilk);
     vat.file(ilk, bytes32("spot"), RAY);
     vat.file(ilk, bytes32("line"), line);
+
+    oracleAuth.file(bytes32("threshold"), 3);
+    address[] memory transactionArray = new address[](3);
+    transactionArray[0] = oracle1;
+    transactionArray[1] = oracle2;
+    transactionArray[2] = oracle3;
+    oracleAuth.addSigners(transactionArray);
   }
 }

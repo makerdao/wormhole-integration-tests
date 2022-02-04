@@ -44,6 +44,7 @@ contract L2AddWormholeDomainSpell {
   }
 
   function execute() external {
+    // wormhole bridge has to burn without approval
     dai.rely(address(wormholeBridge));
 
     wormholeBridge.file(bytes32("validDomains"), masterDomain, 1);

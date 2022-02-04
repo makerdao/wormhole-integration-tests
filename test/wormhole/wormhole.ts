@@ -1,8 +1,6 @@
 import { MainnetSdk } from '@dethcrypto/eth-sdk-client'
 import { BigNumber, BigNumberish, Signer } from 'ethers'
-import { hexlify, hexZeroPad } from 'ethers/lib/utils'
-import { ethers } from 'hardhat'
-import { Dictionary } from 'ts-essentials'
+import { assert, Dictionary } from 'ts-essentials'
 
 import {
   L1AddWormholeDomainSpell__factory,
@@ -16,11 +14,9 @@ import {
   WormholeRouter,
   WormholeRouter__factory,
 } from '../../typechain'
-import { getContractFactory, impersonateAccount, waitForTx } from '../helpers'
+import { getContractFactory, waitForTx } from '../helpers'
 import { BaseBridgeSdk } from './bridge'
 import { executeSpell } from './spell'
-
-const bytes32 = ethers.utils.formatBytes32String
 
 export const OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME = 60 * 60 * 24 * 8 // flush should happen more or less, 1 day after initWormhole, and should take 7 days to finalize
 
@@ -94,10 +90,12 @@ export async function configureWormhole({
   wormholeSdk: WormholeSdk
   baseBridgeSdk: BaseBridgeSdk
 }) {
+  assert(oracleAddresses.length === 3, 'Expected exactly 3 oracles for tests')
   const L1ConfigureWormholeSpellFactory = getContractFactory<L1ConfigureWormholeSpell__factory>(
     'L1ConfigureWormholeSpell',
     defaultSigner,
   )
+  console.log('Executing spell to configure wormhole')
   const configureSpell = await L1ConfigureWormholeSpellFactory.deploy(
     joinDomain,
     wormholeSdk.join.address,
@@ -105,6 +103,10 @@ export async function configureWormhole({
     sdk.vat.address,
     globalLine,
     wormholeSdk.router.address,
+    wormholeSdk.oracleAuth.address,
+    oracleAddresses[0],
+    oracleAddresses[1],
+    oracleAddresses[2],
   )
 
   await executeSpell(sdk, configureSpell)
@@ -127,11 +129,4 @@ export async function configureWormhole({
     console.log('Executing spell to add a new domain...')
     await executeSpell(sdk, addWormholeDomainSpell)
   }
-
-  console.log('Configuring oracleAuth...')
-  const govImpersonator = await impersonateAccount(sdk.pause_proxy.address, sdk.dai.provider as any)
-  await wormholeSdk.oracleAuth
-    .connect(govImpersonator)
-    .file(bytes32('threshold'), hexZeroPad(hexlify(oracleAddresses.length), 32))
-  await wormholeSdk.oracleAuth.connect(govImpersonator).addSigners(oracleAddresses)
 }

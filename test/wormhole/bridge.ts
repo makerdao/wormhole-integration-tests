@@ -7,14 +7,14 @@ import {
   L1DAITokenBridge__factory,
   L1DAIWormholeBridge__factory,
   L1Escrow__factory,
+  L2AddWormholeDomainSpell__factory,
   L2DAITokenBridge__factory,
   L2DAIWormholeBridge__factory,
 } from '../../typechain'
-import { L2AddWormholeDomainSpell__factory } from '../../typechain/factories/L2AddWormholeDomainSpell__factory'
 import { deployUsingFactory, getContractFactory, mintEther } from '../helpers'
 import { OptimismAddresses, waitForTx } from '../helpers'
 import { getAddressOfNextDeployedContract } from '../pe-utils/address'
-import { WormholeSdk } from './wormholeJoin'
+import { WormholeSdk } from './wormhole'
 
 interface BridgeDeployOpts {
   l1Signer: Signer
