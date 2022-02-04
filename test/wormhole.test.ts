@@ -6,7 +6,6 @@ import { ethers } from 'hardhat'
 
 import { Dai, L1Escrow, L2DAIWormholeBridge, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../typechain'
 import { toEthersBigNumber, toRad, toRay, toWad, waitForTx } from './helpers'
-import { RelayMessagesToL1 } from './optimism'
 import {
   deployFileJoinFeesSpell,
   deployFileJoinLineSpell,
@@ -15,6 +14,7 @@ import {
   ForwardTimeFunction,
   getAttestations,
   setupTest,
+  RelayTxToL1Function,
 } from './wormhole'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings
@@ -29,7 +29,7 @@ const amt = toEthersBigNumber(toWad(10))
 export function runWormholeTests(domain: string, setupDomain: DomainSetupFunction) {
   describe(`Wormhole on ${ethers.utils.parseBytes32String(domain)}`, () => {
     let l1Provider: JsonRpcProvider
-    let relayMessagesToL1: RelayMessagesToL1
+    let relayTxToL1: RelayTxToL1Function
     let l1User: Wallet
     let l2User: Wallet
     let userAddress: string // both l1 and l2 user should have the same address
@@ -59,7 +59,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
         l1User,
         l2User,
         l1Sdk,
-        relayMessagesToL1,
+        relayTxToL1,
         ttl,
         forwardTimeToAfterFinalization,
       } = await setupTest({
@@ -97,7 +97,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt))
         } finally {
           // cleanup
-          await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+          await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
         }
       })
 
@@ -144,7 +144,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
             expect(vowDaiBalanceAfterMint).to.be.eq(vowDaiBalanceBefore.add(feeInRad))
           } finally {
             // cleanup
-            await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+            await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
           }
         } finally {
           // cleanup: reset Wormhole fee to 0
@@ -194,7 +194,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
           expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(newLine)) // only half the requested amount was minted (minted=newLine-debt=newLine)
 
-          await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain)) // pay back debt. Usually relaying this message would take 7 days
+          await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain)) // pay back debt. Usually relaying this message would take 7 days
           await waitForTx(join.connect(l1User).mintPending(wormholeGUID, 0, 0)) // mint leftover amount
 
           const l1BalanceAfterWithdraw = await l1Sdk.dai.balanceOf(userAddress)
@@ -261,7 +261,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, badVSigs, 0, 0)).to.be.revertedWith(reason)
         } finally {
           // cleanup
-          await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+          await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
           await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
         }
       })
@@ -278,7 +278,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           )
         } finally {
           // cleanup
-          await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+          await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
           await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
         }
       })
@@ -295,14 +295,14 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
           const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
 
-          const l1RelayMessages = await relayMessagesToL1(tx)
+          const l1RelayMessages = await relayTxToL1(tx)
 
           expect(l1RelayMessages.length).to.be.eq(1)
           const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
           expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt))
         } finally {
           // cleanup
-          await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+          await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
         }
       })
 
@@ -330,14 +330,14 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
             await forwardTimeToAfterFinalization(l1Provider)
             const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
 
-            const l1RelayMessages = await relayMessagesToL1(tx)
+            const l1RelayMessages = await relayTxToL1(tx)
 
             expect(l1RelayMessages.length).to.be.eq(1)
             const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
             expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt)) // note: fee shouldn't be applied as this is slow path
           } finally {
             // cleanup
-            await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+            await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
           }
         } finally {
           // cleanup: reset Wormhole fee to 0
@@ -371,7 +371,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           expect(urn.ink).to.be.eq(0)
 
           // Pay back (not yet incurred) debt. Usually relaying this message would take 7 days
-          await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+          await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
 
           expect(await l2WormholeBridge.batchedDaiToFlush(masterDomain)).to.be.eq(0)
           const debtAfter = await join.debt(domain)
@@ -406,7 +406,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
         expect(urn.ink).to.be.eq(amt)
 
         // Pay back (already incurred) debt. Usually relaying this message would take 7 days
-        await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+        await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
 
         expect(await l2WormholeBridge.batchedDaiToFlush(masterDomain)).to.be.eq(0)
         expect(await join.debt(domain)).to.be.eq(0)

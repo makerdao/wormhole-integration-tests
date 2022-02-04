@@ -46,6 +46,14 @@ interface L1Escrow {
   ) external;
 }
 
+interface GovernanceRelayLike {
+  function relay(
+    address target,
+    bytes calldata targetData,
+    uint32 l2gas
+  ) external;
+}
+
 contract L1AddWormholeDomainSpell {
   uint256 public constant RAY = 10**27;
 
@@ -62,6 +70,9 @@ contract L1AddWormholeDomainSpell {
   L1Escrow public immutable escrow;
   address public immutable dai;
 
+  GovernanceRelayLike public immutable l1GovRelay;
+  address public immutable l2ConfigureDomainSpell;
+
   constructor(
     bytes32 _slaveDomain,
     WormholeJoinLike _wormholeJoin,
@@ -70,7 +81,9 @@ contract L1AddWormholeDomainSpell {
     RouterLike _router,
     address _slaveDomainBridge,
     L1Escrow _escrow,
-    address _dai
+    address _dai,
+    GovernanceRelayLike _l1GovRelay,
+    address _l2ConfigureDomainSpell
   ) {
     slaveDomain = _slaveDomain;
     wormholeJoin = _wormholeJoin;
@@ -80,6 +93,8 @@ contract L1AddWormholeDomainSpell {
     slaveDomainBridge = _slaveDomainBridge;
     escrow = _escrow;
     dai = _dai;
+    l1GovRelay = _l1GovRelay;
+    l2ConfigureDomainSpell = _l2ConfigureDomainSpell;
   }
 
   function execute() external {
@@ -89,5 +104,7 @@ contract L1AddWormholeDomainSpell {
     wormholeJoin.file(bytes32("line"), slaveDomain, line);
 
     escrow.approve(dai, slaveDomainBridge, type(uint256).max);
+
+    l1GovRelay.relay(l2ConfigureDomainSpell, abi.encodeWithSignature("execute()"), 3_000_000);
   }
 }

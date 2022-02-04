@@ -10,7 +10,7 @@ import {
   depositToStandardBridge,
   getArbitrumAddresses,
   makeRelayTxToL1,
-  waitToRelayTxsToL2 as waitToRelayTxsToArbitrumL2,
+  waitToRelayTxsToL2 as relayTxToL2,
 } from './index'
 
 const TTL = 300
@@ -69,12 +69,12 @@ export async function setupArbitrumTests({
     domain,
     arbitrumAddresses,
   })
-  const relayMessagesToL1 = makeRelayTxToL1(wormholeBridgeSdk.l2WormholeBridge, l1Sdk, l1Signer)
+  const relayTxToL1 = makeRelayTxToL1(wormholeBridgeSdk.l2WormholeBridge, l1Sdk, l1Signer)
 
   console.log('Moving some DAI to L2...')
   await waitForTx(l1Sdk.dai.connect(l1Signer).transfer(l1User.address, l2DaiAmount))
   await waitForTx(l1Sdk.dai.connect(l1User).approve(baseBridgeSdk.l1DaiTokenBridge.address, l2DaiAmount))
-  await waitToRelayTxsToArbitrumL2(
+  await relayTxToL2(
     depositToStandardBridge({
       l2Provider: l2Provider,
       from: l1User,
@@ -91,7 +91,8 @@ export async function setupArbitrumTests({
   console.log('Arbitrum setup complete.')
   return {
     l1Sdk,
-    relayMessagesToL1,
+    relayTxToL1,
+    relayTxToL2,
     wormholeSdk,
     baseBridgeSdk,
     wormholeBridgeSdk,

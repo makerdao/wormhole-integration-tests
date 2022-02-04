@@ -15,8 +15,8 @@ import {
   WormholeRouter,
 } from '../../typechain'
 import { RetryProvider } from '../helpers/RetryProvider'
-import { RelayMessagesToL1 } from '../optimism'
-import { BaseBridgeSdk, configureWormholeBridge, WormholeBridgeSdk } from './bridge'
+import { BaseBridgeSdk, WormholeBridgeSdk } from './bridge'
+import { RelayTxToL1Function, RelayTxToL2Function } from './messages'
 import { configureWormhole, WormholeSdk } from './wormhole'
 
 const bytes32 = ethers.utils.formatBytes32String
@@ -41,7 +41,8 @@ export interface DomainSetupOpts {
 export interface DomainSetupResult {
   l1Sdk: Sdk
   wormholeSdk: WormholeSdk
-  relayMessagesToL1: RelayMessagesToL1
+  relayTxToL1: RelayTxToL1Function
+  relayTxToL2: RelayTxToL2Function
   wormholeBridgeSdk: WormholeBridgeSdk
   baseBridgeSdk: BaseBridgeSdk
   ttl: number
@@ -75,7 +76,7 @@ interface SetupTestResult {
   l2Dai: Dai
   l1Escrow: L1Escrow
   l2WormholeBridge: any
-  relayMessagesToL1: RelayMessagesToL1
+  relayTxToL1: RelayTxToL1Function
   l1Sdk: Sdk
   ttl: number
   forwardTimeToAfterFinalization: ForwardTimeFunction
@@ -110,7 +111,8 @@ export async function setupTest({
 
   const {
     l1Sdk,
-    relayMessagesToL1,
+    relayTxToL1,
+    relayTxToL2,
     wormholeBridgeSdk,
     baseBridgeSdk,
     wormholeSdk,
@@ -139,10 +141,12 @@ export async function setupTest({
       [domain]: { line, l1Bridge: wormholeBridgeSdk.l1WormholeBridge.address },
     },
     baseBridgeSdk,
+    wormholeBridgeSdk,
     oracleAddresses,
+    defaultL2Signer: l2Signer,
+    masterDomain,
+    relayTxToL2,
   })
-
-  await configureWormholeBridge({ baseBridgeSdk, wormholeBridgeSdk, masterDomain, l2Signer })
 
   console.log('Setup complete.')
 
@@ -156,7 +160,7 @@ export async function setupTest({
     ...wormholeSdk,
     ...baseBridgeSdk,
     ...wormholeBridgeSdk,
-    relayMessagesToL1,
+    relayTxToL1,
     ttl,
     forwardTimeToAfterFinalization,
   }

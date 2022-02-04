@@ -103,7 +103,6 @@ async function waitToRelayTxToL1(
   const txToL1Event = (l2TxReceipt as any).events?.find((e: any) => e.event === 'TxToL1')
   const { to, data } = l2CrossDomainEnabled.interface.parseLog(txToL1Event).args
 
-  // console.log({ _l2ToL1Sender: l2CrossDomainEnabled.address, _target: to, data })
   const l1TxReceipt = await (
     await l1Sdk.fake_bridge.connect(l1Signer).callContract(l2CrossDomainEnabled.address, to, data, { gasLimit: 500000 })
   ).wait()
