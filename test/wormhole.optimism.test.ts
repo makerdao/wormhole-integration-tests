@@ -1,5 +1,7 @@
+import { ethers } from 'hardhat'
 import { setupOptimismTests } from './optimism'
 import { runWormholeTests } from './wormhole.test'
-import { optimismDomain } from './wormhole/wormhole'
+
+const optimismDomain = ethers.utils.formatBytes32String('OPTIMISM-A')
 
 runWormholeTests(optimismDomain, setupOptimismTests)

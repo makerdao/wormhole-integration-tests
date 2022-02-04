@@ -23,11 +23,6 @@ interface BaseBridgeSdk {
   l1Escrow: L1Escrow
 }
 
-const bytes32 = ethers.utils.formatBytes32String
-
-export const optimismDomain = bytes32('OPTIMISM-A')
-export const arbitrumDomain = bytes32('ARBITRUM-A')
-
 export const OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME = 60 * 60 * 24 * 8 // flush should happen more or less, 1 day after initWormhole, and should take 7 days to finalize
 
 export async function deployWormhole({

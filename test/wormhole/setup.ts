@@ -9,7 +9,7 @@ import { Dai, L1Escrow, WormholeConstantFee, WormholeJoin, WormholeOracleAuth, W
 import { RetryProvider } from '../helpers/RetryProvider'
 import { RelayMessagesToL1 } from '../optimism'
 import { BaseBridgeSdk, configureWormholeBridge, WormholeBridgeSdk } from './bridge'
-import { configureWormhole, optimismDomain, WormholeSdk } from './wormhole'
+import { configureWormhole, WormholeSdk } from './wormhole'
 
 const bytes32 = ethers.utils.formatBytes32String
 
@@ -127,7 +127,7 @@ export async function setupTest({
     joinDomain: masterDomain,
     globalLine: line,
     domainsCfg: {
-      [optimismDomain]: { line, l1Bridge: wormholeBridgeSdk.l1WormholeBridge.address },
+      [domain]: { line, l1Bridge: wormholeBridgeSdk.l1WormholeBridge.address },
     },
     baseBridgeSdk,
     oracleAddresses,
