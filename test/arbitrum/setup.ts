@@ -1,8 +1,8 @@
 import { getRinkebySdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { sleep } from '@eth-optimism/core-utils'
 import { ethers } from 'hardhat'
-import { waitForTx } from '../helpers'
 
+import { waitForTx } from '../helpers'
 import { deployWormhole, DomainSetupOpts, DomainSetupResult } from '../wormhole'
 import {
   deployArbitrumBaseBridge,

@@ -1,6 +1,5 @@
 import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { BigNumber, BigNumberish, Signer } from 'ethers'
-import { ethers } from 'hardhat'
 import { assert, Dictionary } from 'ts-essentials'
 
 import {
