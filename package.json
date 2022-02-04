@@ -6,9 +6,9 @@
   "scripts": {
     "build": "hardhat compile",
     "typechain": "typechain --target ethers-v5 --out-dir ./typechain 'external-artifacts/*.json'",
-    "format": "prettier --check \"./**/*.{js,ts}\"",
-    "format:fix": "prettier --write \"./**/*.{js,ts}\"",
-    "lint": "eslint --ext .ts test",
+    "format": "prettier --check \"./**/*.{js,ts,sol}\"",
+    "format:fix": "prettier --write \"./**/*.{js,ts,sol}\"",
+    "lint": "eslint --ext .ts test deployment",
     "lint:fix": "yarn lint --fix",
     "typecheck": "tsc --noEmit --incremental false --composite false",
     "clean": "hardhat clean",
@@ -16,7 +16,9 @@
     "test:fix": "yarn lint:fix && yarn format:fix && yarn test && yarn typecheck"
   },
   "dependencies": {
-    "hardhat": "^2.6.8"
+    "@types/lodash": "^4.14.178",
+    "hardhat": "^2.6.8",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@dethcrypto/eth-sdk": "^0.2.4",
