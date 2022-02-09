@@ -3,6 +3,8 @@ import { BigNumber, BigNumberish, Signer } from 'ethers'
 import { assert, Dictionary } from 'ts-essentials'
 
 import {
+  BasicRelay,
+  BasicRelay__factory,
   L1AddWormholeDomainSpell__factory,
   L1ConfigureWormholeSpell__factory,
   L1Escrow,
@@ -43,6 +45,7 @@ export async function deployWormhole({
   oracleAuth: WormholeOracleAuth
   router: WormholeRouter
   constantFee: WormholeConstantFee
+  relay: BasicRelay
 }> {
   console.log('Deploying join...')
   const WormholeJoinFactory = getContractFactory<WormholeJoin__factory>('WormholeJoin', defaultSigner)
@@ -64,6 +67,11 @@ export async function deployWormhole({
   const router = await WormholeRouterFactory.deploy(sdk.dai.address)
   console.log('WormholeRouter deployed at: ', router.address)
 
+  console.log('Deploying relay...')
+  const BasicRelayFactory = getContractFactory<BasicRelay__factory>('BasicRelay', defaultSigner)
+  const relay = await BasicRelayFactory.deploy(oracleAuth.address, sdk.dai_join.address)
+  console.log('BasicRelay deployed at: ', relay.address)
+
   console.log('Finalizing permissions...')
   await waitForTx(join.rely(oracleAuth.address))
   await waitForTx(join.rely(router.address))
@@ -76,7 +84,7 @@ export async function deployWormhole({
   await waitForTx(router.rely(sdk.pause_proxy.address))
   await waitForTx(router.deny(await defaultSigner.getAddress()))
 
-  return { join, oracleAuth, router, constantFee }
+  return { join, oracleAuth, router, constantFee, relay }
 }
 export type WormholeSdk = Awaited<ReturnType<typeof deployWormhole>>
 

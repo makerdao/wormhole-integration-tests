@@ -5,7 +5,15 @@ import { getOptionalEnv, getRequiredEnv } from '@makerdao/hardhat-utils'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
-import { Dai, L1Escrow, WormholeConstantFee, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../../typechain'
+import {
+  BasicRelay,
+  Dai,
+  L1Escrow,
+  WormholeConstantFee,
+  WormholeJoin,
+  WormholeOracleAuth,
+  WormholeRouter,
+} from '../../typechain'
 import { RetryProvider } from '../helpers/RetryProvider'
 import { RelayMessagesToL1 } from '../optimism'
 import { BaseBridgeSdk, configureWormholeBridge, WormholeBridgeSdk } from './bridge'
@@ -63,6 +71,7 @@ interface SetupTestResult {
   oracleAuth: WormholeOracleAuth
   router: WormholeRouter
   constantFee: WormholeConstantFee
+  relay: BasicRelay
   l2Dai: Dai
   l1Escrow: L1Escrow
   l2WormholeBridge: any

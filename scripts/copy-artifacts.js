@@ -50,6 +50,7 @@ copyDappToolsArtifact(dappToolsArtifacts, 'WormholeJoin', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeConstantFee', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeOracleAuth', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeRouter', output)
+copyDappToolsArtifact(dappToolsArtifacts, 'BasicRelay', output)
 
 copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l1/L1DAITokenBridge.sol/L1DAITokenBridge.json'), output)
 copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l2/dai.sol/Dai.json'), output)
