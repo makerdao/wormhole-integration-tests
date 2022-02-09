@@ -69,7 +69,7 @@ export async function deployWormhole({
 
   console.log('Deploying relay...')
   const BasicRelayFactory = getContractFactory<BasicRelay__factory>('BasicRelay', defaultSigner)
-  const relay = await BasicRelayFactory.deploy(oracleAuth.address, sdk.dai_join.address)
+  const relay = await BasicRelayFactory.deploy(oracleAuth.address, sdk.dai_join.address, { gasLimit: 1500000 })
   console.log('BasicRelay deployed at: ', relay.address)
 
   console.log('Finalizing permissions...')
