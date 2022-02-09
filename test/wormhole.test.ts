@@ -91,7 +91,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           expect(await oracleAuth.isValid(signHash, signatures, oracleWallets.length)).to.be.true
           const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
 
-          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0))
+          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
 
           const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
           expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt))
@@ -136,7 +136,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
             expect(await oracleAuth.isValid(signHash, signatures, oracleWallets.length)).to.be.true
             const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
 
-            await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, maxFeePerc))
+            await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, maxFeePerc, 0))
 
             const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
             expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt).sub(fee))
@@ -189,13 +189,13 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
           const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
 
-          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0)) // mint maximum possible
+          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0)) // mint maximum possible
 
           const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
           expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(newLine)) // only half the requested amount was minted (minted=newLine-debt=newLine)
 
           await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain)) // pay back debt. Usually relaying this message would take 7 days
-          await waitForTx(join.connect(l1User).mintPending(wormholeGUID, 0)) // mint leftover amount
+          await waitForTx(join.connect(l1User).mintPending(wormholeGUID, 0, 0)) // mint leftover amount
 
           const l1BalanceAfterWithdraw = await l1Sdk.dai.balanceOf(userAddress)
           expect(l1BalanceAfterWithdraw).to.be.eq(l1BalanceBeforeMint.add(amt)) // the full amount has now been minted
@@ -232,7 +232,9 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           let reason = 'WormholeOracleAuth/bad-sig-order'
           await expect(oracleAuth.isValid(signHash, reversedSigs, oracleWallets.length)).to.be.revertedWith(reason)
 
-          await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, reversedSigs, 0)).to.be.revertedWith(reason)
+          await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, reversedSigs, 0, 0)).to.be.revertedWith(
+            reason,
+          )
 
           // Some signatures missing
           const tooFewSigs = `0x${signatures
@@ -243,7 +245,9 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           reason = 'WormholeOracleAuth/not-enough-sig'
           await expect(oracleAuth.isValid(signHash, tooFewSigs, oracleWallets.length)).to.be.revertedWith(reason)
 
-          await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, tooFewSigs, 0)).to.be.revertedWith(reason)
+          await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, tooFewSigs, 0, 0)).to.be.revertedWith(
+            reason,
+          )
 
           // Some signatures invalid
           const badVSigs = `0x${signatures
@@ -254,11 +258,11 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           reason = 'WormholeOracleAuth/bad-v'
           await expect(oracleAuth.isValid(signHash, badVSigs, oracleWallets.length)).to.be.revertedWith(reason)
 
-          await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, badVSigs, 0)).to.be.revertedWith(reason)
+          await expect(oracleAuth.connect(l1User).requestMint(wormholeGUID, badVSigs, 0, 0)).to.be.revertedWith(reason)
         } finally {
           // cleanup
           await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
-          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0))
+          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
         }
       })
 
@@ -269,13 +273,13 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
         const { signatures, wormholeGUID } = await getAttestations(txReceipt, l2WormholeBridge.interface, oracleWallets)
 
         try {
-          await expect(oracleAuth.connect(l1Signer).requestMint(wormholeGUID, signatures, 0)).to.be.revertedWith(
+          await expect(oracleAuth.connect(l1Signer).requestMint(wormholeGUID, signatures, 0, 0)).to.be.revertedWith(
             'WormholeOracleAuth/not-receiver-nor-operator',
           )
         } finally {
           // cleanup
           await relayMessagesToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
-          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0))
+          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
         }
       })
     })
@@ -383,7 +387,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           expect(await l1Sdk.dai.balanceOf(join.address)).to.be.eq(0)
         } finally {
           // cleanup
-          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0))
+          await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
         }
       })
 
@@ -393,7 +397,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           l2WormholeBridge.connect(l2User)['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt),
         )
         const { signatures, wormholeGUID } = await getAttestations(txReceipt, l2WormholeBridge.interface, oracleWallets)
-        await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0))
+        await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
         expect(await l2WormholeBridge.batchedDaiToFlush(masterDomain)).to.be.eq(amt)
         expect(await join.debt(domain)).to.be.eq(amt)
         const l1EscrowDaiBefore = await l1Sdk.dai.balanceOf(l1Escrow.address)
@@ -424,7 +428,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           l2WormholeBridge.connect(l2User)['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt),
         )
         const { signatures, wormholeGUID } = await getAttestations(txReceipt, l2WormholeBridge.interface, oracleWallets)
-        await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0))
+        await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
         const sinBefore = await l1Sdk.vat.sin(l1Sdk.vow.address)
         const debtBefore = await join.debt(domain)
 
