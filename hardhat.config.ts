@@ -3,7 +3,6 @@ import * as dotenv from 'dotenv'
 import { HardhatUserConfig } from 'hardhat/config'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
-import '@typechain/hardhat'
 
 dotenv.config()
 
@@ -16,7 +15,7 @@ const config: HardhatUserConfig = {
     },
   },
   mocha: {
-    timeout: 300_000,
+    timeout: 5000_000,
   },
 }
 

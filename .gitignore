@@ -5,3 +5,5 @@ typechain
 cache
 artifacts
 external-artifacts
+tmp
+.DS_Store

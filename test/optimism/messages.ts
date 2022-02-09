@@ -19,7 +19,7 @@ export function makeWaitToRelayTxsToL2(watcher: Watcher) {
 }
 export type WaitToRelayTxsToL2 = ReturnType<typeof makeWaitToRelayTxsToL2>
 
-// manually relies L2 -> L1 messages as dockerized optimism doesnt do it anymore
+// manually relays L2 -> L1 messages as dockerized optimism doesnt do it anymore
 export async function relayMessagesToL1(
   watcher: Watcher,
   l1Signer: Signer,

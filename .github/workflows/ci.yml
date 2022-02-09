@@ -54,6 +54,17 @@ jobs:
       - run: yarn ts-node ./scripts/ensure-infra-up.ts
       - run: sleep 60 # give it some time to initialize
 
-      - run: yarn test
+      - name: Create env file
+        run: |
+          touch .env
+          echo ARBITRUM_L1_RPC_URL="${{ secrets.ARBITRUM_L1_RPC_URL }}" >> .env
+          echo ARBITRUM_L2_RPC_URL="https://rinkeby.arbitrum.io/rpc" >> .env
+          echo OPTIMISM_L1_RPC_URL="http://127.0.0.1:9545" >> .env
+          echo OPTIMISM_L2_RPC_URL="http://127.0.0.1:8545" >> .env
+          echo DEPLOYER_PRIV_KEY="${{ secrets.DEPLOYER_PRIV_KEY }}" >> .env
+          echo USER_PRIV_KEY="${{ secrets.USER_PRIV_KEY }}" >> .env
+
+      - run: yarn test:optimism
+      - run: yarn test:arbitrum # todo: run in parallel
       - run: yarn typecheck
       - run: .github/workflows/no-git-changes.sh

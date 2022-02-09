@@ -21,6 +21,10 @@ interface WormholeJoinLike {
 }
 
 interface VatLike {
+  function can(address bit, address usr) external view returns (uint256);
+
+  function hope(address usr) external;
+
   function suck(
     address u,
     address v,
@@ -32,7 +36,7 @@ interface DaiJoinLike {
   function exit(address usr, uint256 wad) external;
 }
 
-contract TestBadDebtPushSpell {
+contract PushBadDebtSpell {
   uint256 public constant RAY = 10**27;
 
   WormholeJoinLike public immutable wormholeJoin;
@@ -59,6 +63,10 @@ contract TestBadDebtPushSpell {
   }
 
   function execute() external {
+    if (vat.can(address(this), address(daiJoin)) == 0) {
+      vat.hope(address(daiJoin));
+    }
+
     vat.suck(vow, address(this), badDebt * RAY);
     daiJoin.exit(address(wormholeJoin), badDebt);
     wormholeJoin.settle(sourceDomain, badDebt);

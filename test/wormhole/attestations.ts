@@ -2,7 +2,7 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider'
 import { BigNumber, Wallet } from 'ethers'
 import { arrayify, hashMessage, keccak256 } from 'ethers/lib/utils'
 
-import { L2DAIWormholeBridgeInterface } from '../typechain/L2DAIWormholeBridge'
+import { L2DAIWormholeBridgeInterface } from '../../typechain/L2DAIWormholeBridge'
 
 interface WormholeGUID {
   sourceDomain: string
