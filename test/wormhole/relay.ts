@@ -1,4 +1,4 @@
-import { BigNumberish, ContractReceipt, Event, Signer, Wallet } from 'ethers'
+import { BigNumberish, ContractReceipt, Signer, Wallet } from 'ethers'
 import { arrayify, hexConcat, hexZeroPad, keccak256, splitSignature } from 'ethers/lib/utils'
 
 import { BasicRelay } from '../../typechain'
