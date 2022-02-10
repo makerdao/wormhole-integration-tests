@@ -2,10 +2,20 @@ import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { expect } from 'chai'
 import { Wallet } from 'ethers'
+import { parseEther } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 
-import { Dai, L1Escrow, L2DAIWormholeBridge, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../typechain'
-import { toEthersBigNumber, toRad, toRay, toWad, waitForTx } from './helpers'
+import {
+  BasicRelay,
+  BasicRelay__factory,
+  Dai,
+  L1Escrow,
+  L2DAIWormholeBridge,
+  WormholeJoin,
+  WormholeOracleAuth,
+  WormholeRouter,
+} from '../typechain'
+import { deployUsingFactory, getContractFactory, toEthersBigNumber, toRad, toRay, toWad, waitForTx } from './helpers'
 import {
   deployFileJoinFeesSpell,
   deployFileJoinLineSpell,
@@ -16,6 +26,7 @@ import {
   RelayTxToL1Function,
   setupTest,
 } from './wormhole'
+import { callBasicRelay } from './wormhole/relay'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings
 const bytes32 = ethers.utils.formatBytes32String
@@ -449,6 +460,117 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
         expect(sinAfter.sub(sinBefore)).to.be.eq(amt.mul(toEthersBigNumber(toRay(1))))
         const debtAfter = await join.debt(domain)
         expect(debtBefore.sub(debtAfter)).to.be.eq(amt)
+      })
+    })
+
+    describe('relay', () => {
+      let relay: BasicRelay
+      const expiry = '10000000000'
+      const gasFee = parseEther('1.0')
+
+      before(async () => {
+        console.log('Deploying BasicRelay...')
+        relay = await deployUsingFactory(l1Signer, getContractFactory<BasicRelay__factory>('BasicRelay'), [
+          oracleAuth.address,
+          l1Sdk.dai_join.address,
+        ])
+        console.log('BasicRelay deployed at:', relay.address)
+      })
+
+      it('lets a user obtain minted DAI on L1 using oracle attestations via a relayer contract', async () => {
+        const maxFeePercentage = 0
+        const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
+        const txReceipt = await waitForTx(
+          l2WormholeBridge
+            .connect(l2User)
+            ['initiateWormhole(bytes32,address,uint128,address)'](masterDomain, userAddress, amt, relay.address),
+        )
+        try {
+          const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
+          expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
+          const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
+
+          await callBasicRelay({
+            relay,
+            txReceipt,
+            l2WormholeBridgeInterface: l2WormholeBridge.interface,
+            l1Signer,
+            receiver: l1User,
+            oracleWallets,
+            expiry,
+            gasFee,
+            maxFeePercentage,
+          })
+
+          const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
+          expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt).sub(gasFee))
+        } finally {
+          // cleanup
+          await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+        }
+      })
+
+      it('lets a user obtain minted DAI on L1 using oracle attestations via a relayer contract when fees are non 0', async () => {
+        const fee = toEthersBigNumber(toWad(1))
+        const feeInRad = toEthersBigNumber(toRad(1))
+        const maxFeePercentage = toEthersBigNumber(toWad(0.1)) // 10%
+
+        // Change Wormhole fee
+        const { castFileJoinFeesSpell } = await deployFileJoinFeesSpell({
+          l1Signer,
+          sdk: l1Sdk,
+          wormholeJoinAddress: join.address,
+          sourceDomain: domain,
+          fee,
+          ttl,
+        })
+        await castFileJoinFeesSpell()
+
+        try {
+          const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
+          const txReceipt = await waitForTx(
+            l2WormholeBridge
+              .connect(l2User)
+              ['initiateWormhole(bytes32,address,uint128,address)'](masterDomain, userAddress, amt, relay.address),
+          )
+          try {
+            const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
+            expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
+            const vowDaiBalanceBefore = await l1Sdk.vat.dai(l1Sdk.vow.address)
+            const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
+
+            await callBasicRelay({
+              relay,
+              txReceipt,
+              l2WormholeBridgeInterface: l2WormholeBridge.interface,
+              l1Signer,
+              receiver: l1User,
+              oracleWallets,
+              expiry,
+              gasFee,
+              maxFeePercentage,
+            })
+
+            const vowDaiBalanceAfterMint = await l1Sdk.vat.dai(l1Sdk.vow.address)
+            expect(vowDaiBalanceAfterMint).to.be.eq(vowDaiBalanceBefore.add(feeInRad))
+            const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
+            expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt).sub(gasFee).sub(fee))
+          } finally {
+            // cleanup
+            await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
+          }
+        } finally {
+          // cleanup: reset Wormhole fee to 0
+          const { castFileJoinFeesSpell } = await deployFileJoinFeesSpell({
+            l1Signer,
+            sdk: l1Sdk,
+            wormholeJoinAddress: join.address,
+            sourceDomain: domain,
+            fee: 0,
+            ttl,
+          })
+          await castFileJoinFeesSpell()
+        }
       })
     })
 
