@@ -102,10 +102,10 @@ async function waitToRelayTxToL1(
   l1Signer: Signer,
   l2OriginatingTx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt,
 ): Promise<providers.TransactionReceipt[]> {
-  const l2Tx: any = await l2OriginatingTx
-  const l2TxReceipt: any = await l2Tx.wait()
-  const txToL1Event = (l2TxReceipt as any).events?.find((e: any) => e.event === 'TxToL1')
-  const { to, data } = l2CrossDomainEnabled.interface.parseLog(txToL1Event).args
+  const awaitedL2Tx: any = await l2OriginatingTx
+  const l2TxReceipt: ContractReceipt = awaitedL2Tx.wait ? await awaitedL2Tx.wait() : awaitedL2Tx
+  const txToL1Event = l2TxReceipt.events?.find((e: any) => e.event === 'TxToL1')
+  const { to, data } = l2CrossDomainEnabled.interface.parseLog(txToL1Event!).args
 
   const l1TxReceipt = await (
     await l1Sdk.fake_bridge.connect(l1Signer).callContract(l2CrossDomainEnabled.address, to, data, { gasLimit: 500000 })
