@@ -1,6 +1,7 @@
 import { getRinkebySdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { sleep } from '@eth-optimism/core-utils'
 import { ContractReceipt, ContractTransaction } from 'ethers'
+import { formatEther } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 
 import { L1AddWormholeArbitrumSpell__factory, L2AddWormholeDomainSpell__factory } from '../../typechain'
@@ -85,7 +86,8 @@ export async function setupArbitrumTests({
     getContractFactory<L2AddWormholeDomainSpell__factory>('L2AddWormholeDomainSpell'),
     [baseBridgeSdk.l2Dai.address, wormholeBridgeSdk.l2WormholeBridge.address, masterDomain],
   )
-  console.log('Deploy Arbitrum L1 spell...')
+  console.log('Arbitrum L2 spell deployed at:', l2AddWormholeDomainSpell.address)
+
   const L1AddWormholeArbitrumSpellFactory = getContractFactory<L1AddWormholeArbitrumSpell__factory>(
     'L1AddWormholeArbitrumSpell',
     l1Signer,
@@ -107,6 +109,10 @@ export async function setupArbitrumTests({
     gasPriceBid,
     l2MessageCalldata,
   )
+  const ethValue = maxSubmissionCost.add(gasPriceBid.mul(maxGas))
+  console.log(`Funding Arbitrum L1GovernanceRelay with ${formatEther(ethValue)} ETH...`)
+  await l1Signer.sendTransaction({ to: baseBridgeSdk.l1GovRelay.address, value: ethValue })
+  console.log('Deploy Arbitrum L1 spell...')
   const addWormholeDomainSpell = await L1AddWormholeArbitrumSpellFactory.deploy(
     domain,
     wormholeSdk.join.address,
@@ -119,12 +125,13 @@ export async function setupArbitrumTests({
     {
       l1GovRelay: baseBridgeSdk.l1GovRelay.address,
       l2ConfigureDomainSpell: l2AddWormholeDomainSpell.address,
-      l1CallValue: maxSubmissionCost.add(gasPriceBid.mul(maxGas)),
+      l1CallValue: ethValue,
       maxGas,
       gasPriceBid,
       maxSubmissionCost,
     },
   )
+  console.log('Arbitrum L1 spell deployed at:', addWormholeDomainSpell.address)
 
   console.log('Moving some DAI to L2...')
   await waitForTx(l1Sdk.dai.connect(l1Signer).transfer(l1User.address, l2DaiAmount))

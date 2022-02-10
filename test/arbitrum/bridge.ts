@@ -51,6 +51,9 @@ export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeD
   expect(l1WormholeBridge.address).to.be.eq(futureL1WormholeBridgeAddress, 'Future address doesnt match actual address')
   console.log('L1DaiWormholeGateway deployed at: ', l1WormholeBridge.address)
 
+  await l2WormholeBridge.rely(opts.baseBridgeSdk.l2GovRelay.address)
+  await l2WormholeBridge.deny(await opts.l2Signer.getAddress())
+
   return { l2WormholeBridge, l1WormholeBridge }
 }
 
