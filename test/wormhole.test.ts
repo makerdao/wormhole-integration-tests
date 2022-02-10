@@ -287,15 +287,15 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
     describe('slow path', () => {
       it('mints DAI without oracles', async () => {
         const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
-        const tx = await l2WormholeBridge
-          .connect(l2User)
-          ['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt)
+        const txReceipt = await waitForTx(
+          l2WormholeBridge.connect(l2User)['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt),
+        )
         try {
           const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
           expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
           const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
 
-          const l1RelayMessages = await relayTxToL1(tx)
+          const l1RelayMessages = await relayTxToL1(txReceipt)
 
           expect(l1RelayMessages.length).to.be.eq(1)
           const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
@@ -320,9 +320,11 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
 
         try {
           const l2BalanceBeforeBurn = await l2Dai.balanceOf(userAddress)
-          const tx = await l2WormholeBridge
-            .connect(l2User)
-            ['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt)
+          const txReceipt = await waitForTx(
+            l2WormholeBridge
+              .connect(l2User)
+              ['initiateWormhole(bytes32,address,uint128)'](masterDomain, userAddress, amt),
+          )
 
           try {
             const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
@@ -330,7 +332,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
             await forwardTimeToAfterFinalization(l1Provider)
             const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
 
-            const l1RelayMessages = await relayTxToL1(tx)
+            const l1RelayMessages = await relayTxToL1(txReceipt)
 
             expect(l1RelayMessages.length).to.be.eq(1)
             const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
@@ -399,8 +401,8 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
         const { signatures, wormholeGUID } = await getAttestations(txReceipt, l2WormholeBridge.interface, oracleWallets)
         await waitForTx(oracleAuth.connect(l1User).requestMint(wormholeGUID, signatures, 0, 0))
         expect(await l2WormholeBridge.batchedDaiToFlush(masterDomain)).to.be.eq(amt)
-        expect(await join.debt(domain)).to.be.eq(amt)
         const l1EscrowDaiBefore = await l1Sdk.dai.balanceOf(l1Escrow.address)
+        const debtBefore = await join.debt(domain)
         let urn = await l1Sdk.vat.urns(ilk, join.address)
         expect(urn.art).to.be.eq(amt)
         expect(urn.ink).to.be.eq(amt)
@@ -409,7 +411,8 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
         await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
 
         expect(await l2WormholeBridge.batchedDaiToFlush(masterDomain)).to.be.eq(0)
-        expect(await join.debt(domain)).to.be.eq(0)
+        const debtAfter = await join.debt(domain)
+        expect(debtBefore.sub(debtAfter)).to.be.eq(amt)
         urn = await l1Sdk.vat.urns(ilk, join.address)
         expect(urn.art).to.be.eq(0)
         expect(urn.ink).to.be.eq(0)
