@@ -29,9 +29,12 @@ export async function callBasicRelay({
   gasFee,
   maxFeePercentage,
 }: CallRelayOpt) {
-  const { signatures, wormholeGUID } = await getAttestations(txReceipt, l2WormholeBridgeInterface, oracleWallets)
-  const initEvent = txReceipt.events?.find((e: Event) => e.event === 'WormholeInitialized')!
-  const guidHash = keccak256(initEvent!.data)
+  const { signatures, wormholeGUID, guidHash } = await getAttestations(
+    txReceipt,
+    l2WormholeBridgeInterface,
+    oracleWallets,
+  )
+
   const payload = arrayify(
     keccak256(
       hexConcat([

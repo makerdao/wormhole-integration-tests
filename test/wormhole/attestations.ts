@@ -17,17 +17,17 @@ export async function getAttestations(
   txReceipt: ContractReceipt,
   l2WormholeBridgeInterface: L2DAIWormholeBridgeInterface,
   signers: Wallet[],
-): Promise<{ signHash: string; signatures: string; wormholeGUID: WormholeGUID }> {
+): Promise<{ signHash: string; signatures: string; wormholeGUID: WormholeGUID; guidHash: string }> {
   const initEvent = txReceipt.events?.find((e: Event) => e.event === 'WormholeInitialized')!
   const wormholeGUID: WormholeGUID = l2WormholeBridgeInterface.parseLog(initEvent).args.wormhole
-  const { signHash, signatures } = await signWormholeData(initEvent.data, signers)
-  return { signHash, signatures, wormholeGUID }
+  const { signHash, signatures, guidHash } = await signWormholeData(initEvent.data, signers)
+  return { signHash, signatures, wormholeGUID, guidHash }
 }
 
 async function signWormholeData(
   wormholeData: string,
   signers: Wallet[],
-): Promise<{ signHash: string; signatures: string }> {
+): Promise<{ signHash: string; signatures: string; guidHash: string }> {
   signers = signers.sort((s1, s2) => {
     const bn1 = BigNumber.from(s1.address)
     const bn2 = BigNumber.from(s2.address)
@@ -40,5 +40,5 @@ async function signWormholeData(
   const sigs = await Promise.all(signers.map((signer) => signer.signMessage(arrayify(guidHash))))
   const signatures = `0x${sigs.map((sig) => sig.slice(2)).join('')}`
   const signHash = hashMessage(arrayify(guidHash))
-  return { signHash, signatures }
+  return { signHash, signatures, guidHash }
 }
