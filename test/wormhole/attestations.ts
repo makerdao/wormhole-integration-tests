@@ -20,12 +20,13 @@ export async function getAttestations(
 ): Promise<{ signHash: string; signatures: string; wormholeGUID: WormholeGUID; guidHash: string }> {
   const initEvent = txReceipt.events?.find((e: Event) => e.event === 'WormholeInitialized')!
   const wormholeGUID: WormholeGUID = l2WormholeBridgeInterface.parseLog(initEvent).args.wormhole
-  const { signHash, signatures, guidHash } = await signWormholeData(initEvent.data, signers)
+  const guidHash = keccak256(initEvent.data)
+  const { signHash, signatures } = await signWormholeGUID(guidHash, signers)
   return { signHash, signatures, wormholeGUID, guidHash }
 }
 
-async function signWormholeData(
-  wormholeData: string,
+async function signWormholeGUID(
+  guidHash: string,
   signers: Wallet[],
 ): Promise<{ signHash: string; signatures: string; guidHash: string }> {
   signers = signers.sort((s1, s2) => {
@@ -36,7 +37,6 @@ async function signWormholeData(
     return 0
   })
 
-  const guidHash = keccak256(wormholeData)
   const sigs = await Promise.all(signers.map((signer) => signer.signMessage(arrayify(guidHash))))
   const signatures = `0x${sigs.map((sig) => sig.slice(2)).join('')}`
   const signHash = hashMessage(arrayify(guidHash))
