@@ -7,8 +7,10 @@ import {
   L1DAITokenBridge__factory,
   L1DAIWormholeBridge__factory,
   L1Escrow__factory,
+  L1OptimismGovernanceRelay__factory,
   L2DAITokenBridge__factory,
   L2DAIWormholeBridge__factory,
+  L2OptimismGovernanceRelay__factory,
 } from '../../typechain'
 import { deployUsingFactory, getContractFactory, mintEther } from '../helpers'
 import { OptimismAddresses, waitForTx } from '../helpers'
@@ -46,6 +48,9 @@ export async function deployOptimismWormholeBridge(opts: OptimismWormholeBridgeD
     opts.wormholeSdk.router.address,
   ])
   expect(l1WormholeBridge.address).to.be.eq(futureL1WormholeBridgeAddress, 'Future address doesnt match actual address')
+
+  await l2WormholeBridge.rely(opts.baseBridgeSdk.l2GovRelay.address)
+  await l2WormholeBridge.deny(await opts.l2Signer.getAddress())
 
   return { l2WormholeBridge, l1WormholeBridge }
 }
@@ -88,15 +93,39 @@ export async function deployOptimismBaseBridge(opts: OptimismBaseBridgeDeployOpt
   )
   expect(l1DaiTokenBridge.address).to.be.eq(futureL1DAITokenBridgeAddress, 'Future address doesnt match actual address')
 
+  const futureL1GovRelayAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
+  const l2GovRelay = await deployUsingFactory(
+    opts.l2Signer,
+    getContractFactory<L2OptimismGovernanceRelay__factory>('L2OptimismGovernanceRelay'),
+    [opts.optimismAddresses.l2.xDomainMessenger, futureL1GovRelayAddress],
+  )
+  const l1GovRelay = await deployUsingFactory(
+    opts.l1Signer,
+    getContractFactory<L1OptimismGovernanceRelay__factory>('L1OptimismGovernanceRelay'),
+    [l2GovRelay.address, opts.optimismAddresses.l1.xDomainMessenger],
+  )
+  expect(l1GovRelay.address).to.be.eq(futureL1GovRelayAddress, 'Future address doesnt match actual address')
+
   // bridge has to be approved on escrow because settling moves tokens
   await waitForTx(l1Escrow.approve(opts.sdk.dai.address, l1DaiTokenBridge.address, constants.MaxUint256))
   await waitForTx(l1Escrow.rely(opts.sdk.pause_proxy.address))
+
+  await l1GovRelay.rely(opts.sdk.pause_proxy.address)
+  await l1GovRelay.deny(await opts.l1Signer.getAddress())
+
+  await l2Dai.rely(l2GovRelay.address)
+  await l2Dai.deny(await opts.l2Signer.getAddress())
+
+  await l2DaiTokenBridge.rely(l2GovRelay.address)
+  await l2DaiTokenBridge.deny(await opts.l2Signer.getAddress())
 
   return {
     l2Dai,
     l1DaiTokenBridge,
     l2DaiTokenBridge,
     l1Escrow,
+    l1GovRelay,
+    l2GovRelay,
   }
 }
 export type OptimismBaseBridgeSdk = Awaited<ReturnType<typeof deployOptimismBaseBridge>>

@@ -2,20 +2,28 @@ import { getContractDefinition } from '@eth-optimism/contracts'
 import { Watcher } from '@eth-optimism/core-utils'
 import { getMessagesAndProofsForL2Transaction } from '@eth-optimism/message-relayer'
 import { Contract, ContractReceipt, ContractTransaction, ethers, providers, Signer } from 'ethers'
+import { Interface } from 'ethers/lib/utils'
 
 import { OptimismAddresses, waitForTx } from '../helpers'
 import { retry } from '../helpers/async'
 
-export async function waitToRelayTxsToL2(l1OriginatingTx: Promise<ContractTransaction>, watcher: Watcher) {
-  const res = await l1OriginatingTx
-  await res.wait()
+export async function waitToRelayTxsToL2(
+  l1OriginatingTx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt,
+  watcher: Watcher,
+) {
+  const txHash = await waitAndGetTxHash(l1OriginatingTx)
 
-  const [l2ToL1XDomainMsgHash] = await watcher.getMessageHashesFromL1Tx(res.hash)
-  await watcher.getL2TransactionReceipt(l2ToL1XDomainMsgHash)
+  const [l2ToL1XDomainMsgHash] = await watcher.getMessageHashesFromL1Tx(txHash)
+  const receipt = await watcher.getL2TransactionReceipt(l2ToL1XDomainMsgHash)
+
+  checkForFailedRelays(receipt)
+
+  return receipt
 }
 
 export function makeWaitToRelayTxsToL2(watcher: Watcher) {
-  return (l1OriginatingTx: Promise<ContractTransaction>) => waitToRelayTxsToL2(l1OriginatingTx, watcher)
+  return (l1OriginatingTx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt) =>
+    waitToRelayTxsToL2(l1OriginatingTx, watcher)
 }
 export type WaitToRelayTxsToL2 = ReturnType<typeof makeWaitToRelayTxsToL2>
 
@@ -38,8 +46,10 @@ export async function relayMessagesToL1(
 
 async function waitAndGetTxHash(tx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt) {
   const res: any = await tx
-  await res.wait()
-  return res.hash
+  if (res.wait) {
+    await res.wait()
+  }
+  return res.hash || res.transactionHash
 }
 
 export function makeRelayMessagesToL1(watcher: Watcher, l1Signer: Signer, optimismAddresses: OptimismAddresses) {
@@ -78,18 +88,24 @@ export async function relayMessages(
       l1XdomainMessenger.relayMessage(message.target, message.sender, message.message, message.messageNonce, proof),
     )
 
-    // xchain relayer won't revert but will emit an event in case of revert
-    for (const log of tx.logs) {
-      const parsed = tryOrDefault(() => l1XdomainMessenger.interface.parseLog(log), undefined)
-      if (parsed && parsed.name === 'FailedRelayedMessage') {
-        throw new Error(`Failed to relay message! ${JSON.stringify(parsed)}`)
-      }
-    }
+    checkForFailedRelays(tx)
 
     txs.push(tx)
   }
 
   return txs
+}
+
+export function checkForFailedRelays(tx: ContractReceipt) {
+  const iface = new Interface(['event FailedRelayedMessage(bytes32 indexed msgHash)'])
+
+  // xchain relayer won't revert but will emit an event in case of revert
+  for (const log of tx.logs) {
+    const parsed = tryOrDefault(() => iface.parseLog(log), undefined)
+    if (parsed && parsed.name === 'FailedRelayedMessage') {
+      throw new Error(`Failed to relay message! ${JSON.stringify(parsed)}`)
+    }
+  }
 }
 
 function tryOrDefault<T, K>(fn: () => T, defaultValue: K): T | K {

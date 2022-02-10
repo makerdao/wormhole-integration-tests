@@ -5,13 +5,15 @@ import { BigNumber, ContractReceipt, ContractTransaction, ethers, providers, Sig
 import { L2CrossDomainEnabled } from '../../typechain'
 
 export async function waitToRelayTxsToL2(
-  inProgressL1Tx: Promise<providers.TransactionReceipt>,
+  l1Tx: Promise<ContractTransaction> | ContractTransaction | Promise<ContractReceipt> | ContractReceipt,
   inboxAddress: string,
   l1: ethers.providers.BaseProvider,
   l2: ethers.providers.BaseProvider,
 ) {
-  const l1Tx = await inProgressL1Tx
-  const seqNums = await getInboxSeqNumFromContractTransaction(l1Tx, inboxAddress, l1)
+  const awaitedTx: any = await l1Tx
+  const l1TxReceipt: ContractReceipt = awaitedTx.wait ? await awaitedTx.wait() : awaitedTx
+
+  const seqNums = await getInboxSeqNumFromContractTransaction(l1TxReceipt, inboxAddress, l1)
   const seqNum = seqNums && seqNums[0]
   if (!seqNum) {
     throw new Error('Seq num not found')
@@ -21,7 +23,7 @@ export async function waitToRelayTxsToL2(
   const redeemTransaction = calculateL2RetryableTransactionHash(retryableTicket)
 
   console.log(
-    `Waiting for xchain messages to be relayed... L1 hash: ${l1Tx.transactionHash}, L2 tx hash: ${retryableTicket}, L2 auto redeem tx: ${redeemTransaction}`,
+    `Waiting for xchain messages to be relayed... L1 hash: ${l1TxReceipt.transactionHash}, L2 tx hash: ${retryableTicket}, L2 auto redeem tx: ${redeemTransaction}`,
   )
 
   const retryableTicketReceipt = await l2.waitForTransaction(retryableTicket, undefined, 1000 * 60 * 15)
@@ -33,6 +35,8 @@ export async function waitToRelayTxsToL2(
   const redemptionReceipt = await l2.getTransactionReceipt(redeemTransaction)
   expect(redemptionReceipt.status).equals(1)
   console.log('Xchain message arrived')
+
+  return redemptionReceipt
 }
 
 async function getInboxSeqNumFromContractTransaction(
@@ -98,12 +102,11 @@ async function waitToRelayTxToL1(
   l1Signer: Signer,
   l2OriginatingTx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt,
 ): Promise<providers.TransactionReceipt[]> {
-  const l2Tx: any = await l2OriginatingTx
-  const l2TxReceipt: any = await l2Tx.wait()
-  const txToL1Event = (l2TxReceipt as any).events?.find((e: any) => e.event === 'TxToL1')
-  const { to, data } = l2CrossDomainEnabled.interface.parseLog(txToL1Event).args
+  const awaitedL2Tx: any = await l2OriginatingTx
+  const l2TxReceipt: ContractReceipt = awaitedL2Tx.wait ? await awaitedL2Tx.wait() : awaitedL2Tx
+  const txToL1Event = l2TxReceipt.events?.find((e: any) => e.event === 'TxToL1')
+  const { to, data } = l2CrossDomainEnabled.interface.parseLog(txToL1Event!).args
 
-  // console.log({ _l2ToL1Sender: l2CrossDomainEnabled.address, _target: to, data })
   const l1TxReceipt = await (
     await l1Sdk.fake_bridge.connect(l1Signer).callContract(l2CrossDomainEnabled.address, to, data, { gasLimit: 500000 })
   ).wait()

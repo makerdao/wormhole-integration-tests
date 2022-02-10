@@ -1,13 +1,12 @@
 import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
-import { BigNumber, BigNumberish, Signer } from 'ethers'
-import { assert, Dictionary } from 'ts-essentials'
+import { BigNumber, BigNumberish, Contract, Signer } from 'ethers'
+import { ethers } from 'hardhat'
+import { assert } from 'ts-essentials'
 
 import {
   BasicRelay,
   BasicRelay__factory,
-  L1AddWormholeDomainSpell__factory,
   L1ConfigureWormholeSpell__factory,
-  L1Escrow,
   WormholeConstantFee,
   WormholeConstantFee__factory,
   WormholeJoin,
@@ -18,11 +17,8 @@ import {
   WormholeRouter__factory,
 } from '../../typechain'
 import { getContractFactory, waitForTx } from '../helpers'
+import { RelayTxToL2Function } from './messages'
 import { executeSpell } from './spell'
-
-interface BaseBridgeSdk {
-  l1Escrow: L1Escrow
-}
 
 export const OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME = 60 * 60 * 24 * 8 // flush should happen more or less, 1 day after initWormhole, and should take 7 days to finalize
 
@@ -93,19 +89,21 @@ export async function configureWormhole({
   wormholeSdk,
   joinDomain,
   defaultSigner,
-  domainsCfg,
+  domain,
   oracleAddresses,
   globalLine,
-  baseBridgeSdk,
+  relayTxToL2,
+  addWormholeDomainSpell,
 }: {
-  defaultSigner: Signer
-  globalLine: BigNumber
-  domainsCfg: Dictionary<{ line: BigNumber; l1Bridge: string }>
-  joinDomain: string
-  oracleAddresses: string[]
   sdk: MainnetSdk | RinkebySdk
   wormholeSdk: WormholeSdk
-  baseBridgeSdk: BaseBridgeSdk
+  joinDomain: string
+  defaultSigner: Signer
+  domain: string
+  oracleAddresses: string[]
+  globalLine: BigNumber
+  relayTxToL2: RelayTxToL2Function
+  addWormholeDomainSpell: Contract
 }) {
   assert(oracleAddresses.length === 3, 'Expected exactly 3 oracles for tests')
   const L1ConfigureWormholeSpellFactory = getContractFactory<L1ConfigureWormholeSpell__factory>(
@@ -125,25 +123,11 @@ export async function configureWormhole({
     oracleAddresses[1],
     oracleAddresses[2],
   )
-
   await executeSpell(defaultSigner, sdk, configureSpell)
 
-  for (const [domainName, domainCfg] of Object.entries(domainsCfg)) {
-    const L1AddWormholeDomainSpellFactory = getContractFactory<L1AddWormholeDomainSpell__factory>(
-      'L1AddWormholeDomainSpell',
-      defaultSigner,
-    )
-    const addWormholeDomainSpell = await L1AddWormholeDomainSpellFactory.deploy(
-      domainName,
-      wormholeSdk.join.address,
-      wormholeSdk.constantFee.address,
-      domainCfg.line,
-      wormholeSdk.router.address,
-      domainCfg.l1Bridge,
-      baseBridgeSdk.l1Escrow.address,
-      sdk.dai.address,
-    )
-    console.log(`Executing spell to add domain ${domainName}...`)
-    await executeSpell(defaultSigner, sdk, addWormholeDomainSpell)
-  }
+  console.log(`Executing spell to add domain ${ethers.utils.parseBytes32String(domain)}...`)
+  const spellExecutionTx = await executeSpell(defaultSigner, sdk, addWormholeDomainSpell)
+
+  console.log('Waiting for xchain spell to execute')
+  await relayTxToL2(spellExecutionTx)
 }

@@ -1,7 +1,15 @@
 import { getMainnetSdk, MainnetSdk } from '@dethcrypto/eth-sdk-client'
 import { JsonRpcProvider } from '@ethersproject/providers'
 
-import { forwardTime, getOptimismAddresses, mintEther, toEthersBigNumber } from '../helpers'
+import { L1AddWormholeOptimismSpell__factory, L2AddWormholeDomainSpell__factory } from '../../typechain'
+import {
+  deployUsingFactory,
+  forwardTime,
+  getContractFactory,
+  getOptimismAddresses,
+  mintEther,
+  toEthersBigNumber,
+} from '../helpers'
 import {
   deployWormhole,
   DomainSetupOpts,
@@ -33,23 +41,24 @@ export async function setupOptimismTests({
   masterDomain,
   ilk,
   fee,
+  line,
 }: DomainSetupOpts): Promise<DomainSetupResult> {
   const l1Sdk = getMainnetSdk(l1Signer)
   const mainnetSdk = l1Sdk as MainnetSdk
   const optimismAddresses = await getOptimismAddresses()
   const watcher = makeWatcher(l1Provider, l2Provider, optimismAddresses)
-  const waitToRelayTxsToL2 = makeWaitToRelayTxsToL2(watcher)
-  const relayMessagesToL1 = makeRelayMessagesToL1(watcher, l1Signer, optimismAddresses)
+  const relayTxToL2 = makeWaitToRelayTxsToL2(watcher)
+  const relayTxToL1 = makeRelayMessagesToL1(watcher, l1Signer, optimismAddresses)
 
   console.log('Funding l1Signer ETH balance...')
   await mintEther(l1Signer.address, l1Provider)
   console.log('Funding l2Signer ETH balance...')
-  await mintL2Ether(waitToRelayTxsToL2, l1Sdk as MainnetSdk, optimismAddresses, l1Provider, l2Signer.address)
+  await mintL2Ether(relayTxToL2, l1Sdk as MainnetSdk, optimismAddresses, l1Provider, l2Signer.address)
 
   console.log('Funding l1User ETH balance...')
   await mintEther(l1User.address, l1Provider)
   console.log('Funding l2User ETH balance...')
-  await mintL2Ether(waitToRelayTxsToL2, l1Sdk as MainnetSdk, optimismAddresses, l1Provider, l1User.address)
+  await mintL2Ether(relayTxToL2, l1Sdk as MainnetSdk, optimismAddresses, l1Provider, l1User.address)
 
   const wormholeSdk = await deployWormhole({
     defaultSigner: l1Signer,
@@ -76,10 +85,34 @@ export async function setupOptimismTests({
     optimismAddresses,
   })
 
+  console.log('Deploy Optimism L2 spell...')
+  const l2AddWormholeDomainSpell = await deployUsingFactory(
+    l2Signer,
+    getContractFactory<L2AddWormholeDomainSpell__factory>('L2AddWormholeDomainSpell'),
+    [baseBridgeSdk.l2Dai.address, wormholeBridgeSdk.l2WormholeBridge.address, masterDomain],
+  )
+  console.log('Deploy Optimism L1 spell...')
+  const L1AddWormholeOptimismSpellFactory = getContractFactory<L1AddWormholeOptimismSpell__factory>(
+    'L1AddWormholeOptimismSpell',
+    l1Signer,
+  )
+  const addWormholeDomainSpell = await L1AddWormholeOptimismSpellFactory.deploy(
+    domain,
+    wormholeSdk.join.address,
+    wormholeSdk.constantFee.address,
+    line,
+    wormholeSdk.router.address,
+    wormholeBridgeSdk.l1WormholeBridge.address,
+    baseBridgeSdk.l1Escrow.address,
+    mainnetSdk.dai.address,
+    baseBridgeSdk.l1GovRelay.address,
+    l2AddWormholeDomainSpell.address,
+  )
+
   console.log('Moving some DAI to L2...')
   await mintDai(l1Sdk as MainnetSdk, l1User.address, toEthersBigNumber(l2DaiAmount.toString()))
   await mainnetSdk.dai.connect(l1User).approve(baseBridgeSdk.l1DaiTokenBridge.address, l2DaiAmount)
-  await waitToRelayTxsToL2(
+  await relayTxToL2(
     baseBridgeSdk.l1DaiTokenBridge
       .connect(l1User)
       .depositERC20(mainnetSdk.dai.address, baseBridgeSdk.l2Dai.address, l2DaiAmount, defaultL2Gas, defaultL2Data),
@@ -87,12 +120,14 @@ export async function setupOptimismTests({
   console.log('Optimism setup complete.')
   return {
     l1Sdk,
-    relayMessagesToL1,
+    relayTxToL1,
+    relayTxToL2,
     wormholeBridgeSdk,
     baseBridgeSdk,
     wormholeSdk,
     ttl: TTL,
     forwardTimeToAfterFinalization,
+    addWormholeDomainSpell,
   }
 }
 

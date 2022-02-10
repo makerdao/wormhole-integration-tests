@@ -2,7 +2,7 @@ import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { randomBytes } from '@ethersproject/random'
 import { getOptionalEnv, getRequiredEnv } from '@makerdao/hardhat-utils'
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Contract, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
 import {
@@ -15,8 +15,8 @@ import {
   WormholeRouter,
 } from '../../typechain'
 import { RetryProvider } from '../helpers/RetryProvider'
-import { RelayMessagesToL1 } from '../optimism'
-import { BaseBridgeSdk, configureWormholeBridge, WormholeBridgeSdk } from './bridge'
+import { BaseBridgeSdk, WormholeBridgeSdk } from './bridge'
+import { RelayTxToL1Function, RelayTxToL2Function } from './messages'
 import { configureWormhole, WormholeSdk } from './wormhole'
 
 const bytes32 = ethers.utils.formatBytes32String
@@ -36,16 +36,19 @@ export interface DomainSetupOpts {
   masterDomain: string
   ilk: string
   fee: BigNumberish
+  line: BigNumberish
 }
 
 export interface DomainSetupResult {
   l1Sdk: Sdk
   wormholeSdk: WormholeSdk
-  relayMessagesToL1: RelayMessagesToL1
+  relayTxToL1: RelayTxToL1Function
+  relayTxToL2: RelayTxToL2Function
   wormholeBridgeSdk: WormholeBridgeSdk
   baseBridgeSdk: BaseBridgeSdk
   ttl: number
   forwardTimeToAfterFinalization: ForwardTimeFunction
+  addWormholeDomainSpell: Contract
 }
 
 export type ForwardTimeFunction = (l1Provider: JsonRpcProvider) => Promise<void>
@@ -75,7 +78,7 @@ interface SetupTestResult {
   l2Dai: Dai
   l1Escrow: L1Escrow
   l2WormholeBridge: any
-  relayMessagesToL1: RelayMessagesToL1
+  relayTxToL1: RelayTxToL1Function
   l1Sdk: Sdk
   ttl: number
   forwardTimeToAfterFinalization: ForwardTimeFunction
@@ -110,12 +113,14 @@ export async function setupTest({
 
   const {
     l1Sdk,
-    relayMessagesToL1,
+    relayTxToL1,
+    relayTxToL2,
     wormholeBridgeSdk,
     baseBridgeSdk,
     wormholeSdk,
     ttl,
     forwardTimeToAfterFinalization,
+    addWormholeDomainSpell,
   } = await setupDomain({
     l1Signer,
     l2Signer,
@@ -127,22 +132,20 @@ export async function setupTest({
     masterDomain,
     ilk,
     fee,
+    line,
   })
 
   await configureWormhole({
-    defaultSigner: l1Signer,
     sdk: l1Sdk,
     wormholeSdk,
     joinDomain: masterDomain,
-    globalLine: line,
-    domainsCfg: {
-      [domain]: { line, l1Bridge: wormholeBridgeSdk.l1WormholeBridge.address },
-    },
-    baseBridgeSdk,
+    defaultSigner: l1Signer,
+    domain,
     oracleAddresses,
+    globalLine: line,
+    relayTxToL2,
+    addWormholeDomainSpell,
   })
-
-  await configureWormholeBridge({ baseBridgeSdk, wormholeBridgeSdk, masterDomain, l2Signer })
 
   console.log('Setup complete.')
 
@@ -156,7 +159,7 @@ export async function setupTest({
     ...wormholeSdk,
     ...baseBridgeSdk,
     ...wormholeBridgeSdk,
-    relayMessagesToL1,
+    relayTxToL1,
     ttl,
     forwardTimeToAfterFinalization,
   }

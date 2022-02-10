@@ -20,9 +20,8 @@ function copyDappToolsArtifact(inputDirPath, name, destinationDirPath) {
   fs.writeFileSync(destinationPath, JSON.stringify(artifact, null, 2))
 }
 
-function copyHardhatArtifact(filePath, destinationDirPath) {
+function copyHardhatArtifact(filePath, destinationDirPath, destinationFilename) {
   console.log(`Reading hardhat artifact ${filePath}`)
-  const nameWithExtension = basename(filePath)
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`${filePath} doesnt exist!`)
@@ -30,7 +29,7 @@ function copyHardhatArtifact(filePath, destinationDirPath) {
 
   const artifact = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
 
-  const destinationPath = join(destinationDirPath, nameWithExtension)
+  const destinationPath = join(destinationDirPath, destinationFilename || basename(filePath))
   console.log(`Writing to ${destinationPath}`)
   fs.writeFileSync(destinationPath, JSON.stringify(artifact, null, 2))
 }
@@ -58,6 +57,16 @@ copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l2/L2DAITokenBridge.so
 copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l1/L1DAIWormholeBridge.sol/L1DAIWormholeBridge.json'), output)
 copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l1/L1Escrow.sol/L1Escrow.json'), output)
 copyHardhatArtifact(join(hardhatOptimismBridgeArtifacts, 'l2/L2DAIWormholeBridge.sol/L2DAIWormholeBridge.json'), output)
+copyHardhatArtifact(
+  join(hardhatOptimismBridgeArtifacts, 'l1/L1GovernanceRelay.sol/L1GovernanceRelay.json'),
+  output,
+  'L1OptimismGovernanceRelay.json',
+)
+copyHardhatArtifact(
+  join(hardhatOptimismBridgeArtifacts, 'l2/L2GovernanceRelay.sol/L2GovernanceRelay.json'),
+  output,
+  'L2OptimismGovernanceRelay.json',
+)
 
 copyHardhatArtifact(join(hardhatArbitrumBridgeArtifacts, 'l1/L1DaiGateway.sol/L1DaiGateway.json'), output)
 copyHardhatArtifact(join(hardhatArbitrumBridgeArtifacts, 'l2/L2DaiGateway.sol/L2DaiGateway.json'), output)
@@ -73,6 +82,16 @@ copyHardhatArtifact(
   join(hardhatArbitrumBridgeArtifacts, 'l2/L2DaiWormholeGateway.sol/L2DaiWormholeGateway.json'),
   output,
 )
+copyHardhatArtifact(
+  join(hardhatArbitrumBridgeArtifacts, 'l1/L1GovernanceRelay.sol/L1GovernanceRelay.json'),
+  output,
+  'L1ArbitrumGovernanceRelay.json',
+)
+copyHardhatArtifact(
+  join(hardhatArbitrumBridgeArtifacts, 'l2/L2GovernanceRelay.sol/L2GovernanceRelay.json'),
+  output,
+  'L2ArbitrumGovernanceRelay.json',
+)
 
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/FileJoinFeesSpell.sol/FileJoinFeesSpell.json'), output)
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/FileJoinLineSpell.sol/FileJoinLineSpell.json'), output)
@@ -82,7 +101,11 @@ copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/VatLik
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/WormholeJoinLike.json'), output)
 
 copyHardhatArtifact(
-  join(hardhatTestArtifacts, 'deploy/L1AddWormholeDomainSpell.sol/L1AddWormholeDomainSpell.json'),
+  join(hardhatTestArtifacts, 'deploy/L1AddWormholeOptimismSpell.sol/L1AddWormholeOptimismSpell.json'),
+  output,
+)
+copyHardhatArtifact(
+  join(hardhatTestArtifacts, 'deploy/L1AddWormholeArbitrumSpell.sol/L1AddWormholeArbitrumSpell.json'),
   output,
 )
 copyHardhatArtifact(
