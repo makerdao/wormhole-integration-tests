@@ -4,9 +4,11 @@ import { constants, Signer, Wallet } from 'ethers'
 
 import {
   Dai__factory,
+  L1ArbitrumGovernanceRelay__factory,
   L1DaiGateway__factory,
   L1DaiWormholeGateway__factory,
   L1Escrow__factory,
+  L2ArbitrumGovernanceRelay__factory,
   L2DaiGateway__factory,
   L2DaiWormholeGateway__factory,
 } from '../../typechain'
@@ -93,15 +95,39 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
   expect(l1DaiGateway.address).to.be.eq(futureL1DaiGatewayAddress, 'Future address doesnt match actual address')
   console.log('L1DaiGateway deployed at: ', l1DaiGateway.address)
 
+  const futureL1GovRelayAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
+  const l2GovRelay = await deployUsingFactory(
+    opts.l2Signer,
+    getContractFactory<L2ArbitrumGovernanceRelay__factory>('L2ArbitrumGovernanceRelay'),
+    [futureL1GovRelayAddress],
+  )
+  const l1GovRelay = await deployUsingFactory(
+    opts.l1Signer,
+    getContractFactory<L1ArbitrumGovernanceRelay__factory>('L1ArbitrumGovernanceRelay'),
+    [opts.arbitrumAddresses.l1.inbox, l2GovRelay.address],
+  )
+  expect(l1GovRelay.address).to.be.eq(futureL1GovRelayAddress, 'Future address doesnt match actual address')
+
   // bridge has to be approved on escrow because settling moves tokens
   await waitForTx(l1Escrow.approve(opts.sdk.dai.address, l1DaiGateway.address, constants.MaxUint256))
   await waitForTx(l1Escrow.rely(opts.sdk.pause_proxy.address))
+
+  await waitForTx(l1GovRelay.rely(opts.sdk.pause_proxy.address))
+  await waitForTx(l1GovRelay.deny(await opts.l1Signer.getAddress()))
+
+  await waitForTx(l2Dai.rely(l2GovRelay.address))
+  await waitForTx(l2Dai.deny(await opts.l2Signer.getAddress()))
+
+  await waitForTx(l1DaiGateway.rely(l2GovRelay.address))
+  await waitForTx(l2DaiGateway.deny(await opts.l2Signer.getAddress()))
 
   return {
     l2Dai,
     l1DaiTokenBridge: l1DaiGateway,
     l2DaiTokenBridge: l2DaiGateway,
     l1Escrow,
+    l1GovRelay,
+    l2GovRelay,
   }
 }
 

@@ -2,7 +2,7 @@ import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { randomBytes } from '@ethersproject/random'
 import { getOptionalEnv, getRequiredEnv } from '@makerdao/hardhat-utils'
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Contract, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
 import {
@@ -36,6 +36,7 @@ export interface DomainSetupOpts {
   masterDomain: string
   ilk: string
   fee: BigNumberish
+  line: BigNumberish
 }
 
 export interface DomainSetupResult {
@@ -47,6 +48,7 @@ export interface DomainSetupResult {
   baseBridgeSdk: BaseBridgeSdk
   ttl: number
   forwardTimeToAfterFinalization: ForwardTimeFunction
+  addWormholeDomainSpell: Contract
 }
 
 export type ForwardTimeFunction = (l1Provider: JsonRpcProvider) => Promise<void>
@@ -118,6 +120,7 @@ export async function setupTest({
     wormholeSdk,
     ttl,
     forwardTimeToAfterFinalization,
+    addWormholeDomainSpell,
   } = await setupDomain({
     l1Signer,
     l2Signer,
@@ -129,23 +132,19 @@ export async function setupTest({
     masterDomain,
     ilk,
     fee,
+    line,
   })
 
   await configureWormhole({
-    defaultSigner: l1Signer,
     sdk: l1Sdk,
     wormholeSdk,
     joinDomain: masterDomain,
-    globalLine: line,
-    domainsCfg: {
-      [domain]: { line, l1Bridge: wormholeBridgeSdk.l1WormholeBridge.address },
-    },
-    baseBridgeSdk,
-    wormholeBridgeSdk,
+    defaultSigner: l1Signer,
+    domain,
     oracleAddresses,
-    defaultL2Signer: l2Signer,
-    masterDomain,
+    globalLine: line,
     relayTxToL2,
+    addWormholeDomainSpell,
   })
 
   console.log('Setup complete.')

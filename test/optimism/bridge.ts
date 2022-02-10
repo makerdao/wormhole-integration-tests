@@ -7,10 +7,10 @@ import {
   L1DAITokenBridge__factory,
   L1DAIWormholeBridge__factory,
   L1Escrow__factory,
-  L1GovernanceRelay__factory,
+  L1OptimismGovernanceRelay__factory,
   L2DAITokenBridge__factory,
   L2DAIWormholeBridge__factory,
-  L2GovernanceRelay__factory,
+  L2OptimismGovernanceRelay__factory,
 } from '../../typechain'
 import { deployUsingFactory, getContractFactory, mintEther } from '../helpers'
 import { OptimismAddresses, waitForTx } from '../helpers'
@@ -96,12 +96,12 @@ export async function deployOptimismBaseBridge(opts: OptimismBaseBridgeDeployOpt
   const futureL1GovRelayAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
   const l2GovRelay = await deployUsingFactory(
     opts.l2Signer,
-    getContractFactory<L2GovernanceRelay__factory>('L2GovernanceRelay'),
+    getContractFactory<L2OptimismGovernanceRelay__factory>('L2OptimismGovernanceRelay'),
     [opts.optimismAddresses.l2.xDomainMessenger, futureL1GovRelayAddress],
   )
   const l1GovRelay = await deployUsingFactory(
     opts.l1Signer,
-    getContractFactory<L1GovernanceRelay__factory>('L1GovernanceRelay'),
+    getContractFactory<L1OptimismGovernanceRelay__factory>('L1OptimismGovernanceRelay'),
     [l2GovRelay.address, opts.optimismAddresses.l1.xDomainMessenger],
   )
   expect(l1GovRelay.address).to.be.eq(futureL1GovRelayAddress, 'Future address doesnt match actual address')

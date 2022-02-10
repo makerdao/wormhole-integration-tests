@@ -13,8 +13,8 @@ import {
   DomainSetupFunction,
   ForwardTimeFunction,
   getAttestations,
-  setupTest,
   RelayTxToL1Function,
+  setupTest,
 } from './wormhole'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings

@@ -1,7 +1,15 @@
 import { getMainnetSdk, MainnetSdk } from '@dethcrypto/eth-sdk-client'
 import { JsonRpcProvider } from '@ethersproject/providers'
 
-import { forwardTime, getOptimismAddresses, mintEther, toEthersBigNumber } from '../helpers'
+import { L1AddWormholeOptimismSpell__factory, L2AddWormholeDomainSpell__factory } from '../../typechain'
+import {
+  deployUsingFactory,
+  forwardTime,
+  getContractFactory,
+  getOptimismAddresses,
+  mintEther,
+  toEthersBigNumber,
+} from '../helpers'
 import {
   deployWormhole,
   DomainSetupOpts,
@@ -33,6 +41,7 @@ export async function setupOptimismTests({
   masterDomain,
   ilk,
   fee,
+  line,
 }: DomainSetupOpts): Promise<DomainSetupResult> {
   const l1Sdk = getMainnetSdk(l1Signer)
   const mainnetSdk = l1Sdk as MainnetSdk
@@ -76,6 +85,30 @@ export async function setupOptimismTests({
     optimismAddresses,
   })
 
+  console.log('Deploy Optimism L2 spell...')
+  const l2AddWormholeDomainSpell = await deployUsingFactory(
+    l2Signer,
+    getContractFactory<L2AddWormholeDomainSpell__factory>('L2AddWormholeDomainSpell'),
+    [baseBridgeSdk.l2Dai.address, wormholeBridgeSdk.l2WormholeBridge.address, masterDomain],
+  )
+  console.log('Deploy Optimism L1 spell...')
+  const L1AddWormholeOptimismSpellFactory = getContractFactory<L1AddWormholeOptimismSpell__factory>(
+    'L1AddWormholeOptimismSpell',
+    l1Signer,
+  )
+  const addWormholeDomainSpell = await L1AddWormholeOptimismSpellFactory.deploy(
+    domain,
+    wormholeSdk.join.address,
+    wormholeSdk.constantFee.address,
+    line,
+    wormholeSdk.router.address,
+    wormholeBridgeSdk.l1WormholeBridge.address,
+    baseBridgeSdk.l1Escrow.address,
+    mainnetSdk.dai.address,
+    baseBridgeSdk.l1GovRelay.address,
+    l2AddWormholeDomainSpell.address,
+  )
+
   console.log('Moving some DAI to L2...')
   await mintDai(l1Sdk as MainnetSdk, l1User.address, toEthersBigNumber(l2DaiAmount.toString()))
   await mainnetSdk.dai.connect(l1User).approve(baseBridgeSdk.l1DaiTokenBridge.address, l2DaiAmount)
@@ -94,6 +127,7 @@ export async function setupOptimismTests({
     wormholeSdk,
     ttl: TTL,
     forwardTimeToAfterFinalization,
+    addWormholeDomainSpell,
   }
 }
 

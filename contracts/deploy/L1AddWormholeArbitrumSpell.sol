@@ -50,11 +50,14 @@ interface GovernanceRelayLike {
   function relay(
     address target,
     bytes calldata targetData,
-    uint32 l2gas
+    uint256 l1CallValue,
+    uint256 maxGas,
+    uint256 gasPriceBid,
+    uint256 maxSubmissionCost
   ) external;
 }
 
-contract L1AddWormholeDomainSpell {
+contract L1AddWormholeArbitrumSpell {
   uint256 public constant RAY = 10**27;
 
   bytes32 public immutable slaveDomain;
@@ -73,6 +76,20 @@ contract L1AddWormholeDomainSpell {
   GovernanceRelayLike public immutable l1GovRelay;
   address public immutable l2ConfigureDomainSpell;
 
+  uint256 public immutable l1CallValue;
+  uint256 public immutable maxGas;
+  uint256 public immutable gasPriceBid;
+  uint256 public immutable maxSubmissionCost;
+
+  struct RelayParams {
+    address l1GovRelay;
+    address l2ConfigureDomainSpell;
+    uint256 l1CallValue;
+    uint256 maxGas;
+    uint256 gasPriceBid;
+    uint256 maxSubmissionCost;
+  }
+
   constructor(
     bytes32 _slaveDomain,
     WormholeJoinLike _wormholeJoin,
@@ -82,8 +99,7 @@ contract L1AddWormholeDomainSpell {
     address _slaveDomainBridge,
     L1Escrow _escrow,
     address _dai,
-    GovernanceRelayLike _l1GovRelay,
-    address _l2ConfigureDomainSpell
+    RelayParams memory _relay
   ) {
     slaveDomain = _slaveDomain;
     wormholeJoin = _wormholeJoin;
@@ -93,8 +109,12 @@ contract L1AddWormholeDomainSpell {
     slaveDomainBridge = _slaveDomainBridge;
     escrow = _escrow;
     dai = _dai;
-    l1GovRelay = _l1GovRelay;
-    l2ConfigureDomainSpell = _l2ConfigureDomainSpell;
+    l1GovRelay = GovernanceRelayLike(_relay.l1GovRelay);
+    l2ConfigureDomainSpell = _relay.l2ConfigureDomainSpell;
+    l1CallValue = _relay.l1CallValue;
+    maxGas = _relay.maxGas;
+    gasPriceBid = _relay.gasPriceBid;
+    maxSubmissionCost = _relay.maxSubmissionCost;
   }
 
   function execute() external {
@@ -105,6 +125,13 @@ contract L1AddWormholeDomainSpell {
 
     escrow.approve(dai, slaveDomainBridge, type(uint256).max);
 
-    l1GovRelay.relay(l2ConfigureDomainSpell, abi.encodeWithSignature("execute()"), 3_000_000);
+    l1GovRelay.relay(
+      l2ConfigureDomainSpell,
+      abi.encodeWithSignature("execute()"),
+      l1CallValue,
+      maxGas,
+      gasPriceBid,
+      maxSubmissionCost
+    );
   }
 }

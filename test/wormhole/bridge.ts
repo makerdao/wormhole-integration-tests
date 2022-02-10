@@ -1,9 +1,11 @@
-import { Dai, L1Escrow, L1GovernanceRelay, L2GovernanceRelay } from '../../typechain'
+import { Contract } from 'ethers'
 
-export type WormholeBridgeSdk = { l1WormholeBridge: any; l2WormholeBridge: any }
+import { Dai, L1Escrow } from '../../typechain'
+
+export type WormholeBridgeSdk = { l1WormholeBridge: Contract; l2WormholeBridge: Contract }
 export type BaseBridgeSdk = {
   l2Dai: Dai
   l1Escrow: L1Escrow
-  l1GovRelay: L1GovernanceRelay
-  l2GovRelay: L2GovernanceRelay
+  l1GovRelay: Contract
+  l2GovRelay: Contract
 }

@@ -1,13 +1,12 @@
 import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
-import { BigNumber, BigNumberish, Signer } from 'ethers'
-import { assert, Dictionary } from 'ts-essentials'
+import { BigNumber, BigNumberish, Contract, Signer } from 'ethers'
+import { ethers } from 'hardhat'
+import { assert } from 'ts-essentials'
 
 import {
   BasicRelay,
   BasicRelay__factory,
-  L1AddWormholeDomainSpell__factory,
   L1ConfigureWormholeSpell__factory,
-  L2AddWormholeDomainSpell__factory,
   WormholeConstantFee,
   WormholeConstantFee__factory,
   WormholeJoin,
@@ -17,8 +16,7 @@ import {
   WormholeRouter,
   WormholeRouter__factory,
 } from '../../typechain'
-import { deployUsingFactory, getContractFactory, waitForTx } from '../helpers'
-import { BaseBridgeSdk, WormholeBridgeSdk } from './bridge'
+import { getContractFactory, waitForTx } from '../helpers'
 import { RelayTxToL2Function } from './messages'
 import { executeSpell } from './spell'
 
@@ -91,27 +89,21 @@ export async function configureWormhole({
   wormholeSdk,
   joinDomain,
   defaultSigner,
-  defaultL2Signer,
-  domainsCfg,
+  domain,
   oracleAddresses,
   globalLine,
-  baseBridgeSdk,
-  wormholeBridgeSdk,
-  masterDomain,
   relayTxToL2,
+  addWormholeDomainSpell,
 }: {
-  defaultSigner: Signer
-  defaultL2Signer: Signer
-  globalLine: BigNumber
-  domainsCfg: Dictionary<{ line: BigNumber; l1Bridge: string }>
-  joinDomain: string
-  oracleAddresses: string[]
   sdk: MainnetSdk | RinkebySdk
   wormholeSdk: WormholeSdk
-  baseBridgeSdk: BaseBridgeSdk
-  wormholeBridgeSdk: WormholeBridgeSdk
-  masterDomain: string
+  joinDomain: string
+  defaultSigner: Signer
+  domain: string
+  oracleAddresses: string[]
+  globalLine: BigNumber
   relayTxToL2: RelayTxToL2Function
+  addWormholeDomainSpell: Contract
 }) {
   assert(oracleAddresses.length === 3, 'Expected exactly 3 oracles for tests')
   const L1ConfigureWormholeSpellFactory = getContractFactory<L1ConfigureWormholeSpell__factory>(
@@ -131,37 +123,11 @@ export async function configureWormhole({
     oracleAddresses[1],
     oracleAddresses[2],
   )
-
   await executeSpell(defaultSigner, sdk, configureSpell)
 
-  for (const [domainName, domainCfg] of Object.entries(domainsCfg)) {
-    const l2AddWormholeDomainSpell = await deployUsingFactory(
-      defaultL2Signer,
-      getContractFactory<L2AddWormholeDomainSpell__factory>('L2AddWormholeDomainSpell'),
-      [baseBridgeSdk.l2Dai.address, wormholeBridgeSdk.l2WormholeBridge.address, masterDomain],
-    )
+  console.log(`Executing spell to add domain ${ethers.utils.parseBytes32String(domain)}...`)
+  const spellExecutionTx = await executeSpell(defaultSigner, sdk, addWormholeDomainSpell)
 
-    const L1AddWormholeDomainSpellFactory = getContractFactory<L1AddWormholeDomainSpell__factory>(
-      'L1AddWormholeDomainSpell',
-      defaultSigner,
-    )
-    const addWormholeDomainSpell = await L1AddWormholeDomainSpellFactory.deploy(
-      domainName,
-      wormholeSdk.join.address,
-      wormholeSdk.constantFee.address,
-      domainCfg.line,
-      wormholeSdk.router.address,
-      domainCfg.l1Bridge,
-      baseBridgeSdk.l1Escrow.address,
-      sdk.dai.address,
-      baseBridgeSdk.l1GovRelay.address,
-      l2AddWormholeDomainSpell.address,
-    )
-
-    console.log(`Executing spell to add domain ${domainName}...`)
-    const spellExecutionTx = await executeSpell(defaultSigner, sdk, addWormholeDomainSpell)
-
-    console.log('Waiting for xchain spell to execute')
-    await relayTxToL2(spellExecutionTx)
-  }
+  console.log('Waiting for xchain spell to execute')
+  await relayTxToL2(spellExecutionTx)
 }
