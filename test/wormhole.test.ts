@@ -489,6 +489,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           const l2BalanceAfterBurn = await l2Dai.balanceOf(userAddress)
           expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
           const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
+          const relayCallerBeforeMint = await l1Sdk.dai.balanceOf(l1Signer.address)
 
           await callBasicRelay({
             relay,
@@ -504,6 +505,8 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
 
           const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
           expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt).sub(gasFee))
+          const relayCallerAfterMint = await l1Sdk.dai.balanceOf(l1Signer.address)
+          expect(relayCallerAfterMint).to.be.eq(relayCallerBeforeMint.add(gasFee))
         } finally {
           // cleanup
           await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
@@ -538,6 +541,7 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
             expect(l2BalanceAfterBurn).to.be.eq(l2BalanceBeforeBurn.sub(amt))
             const vowDaiBalanceBefore = await l1Sdk.vat.dai(l1Sdk.vow.address)
             const l1BalanceBeforeMint = await l1Sdk.dai.balanceOf(userAddress)
+            const relayCallerBeforeMint = await l1Sdk.dai.balanceOf(l1Signer.address)
 
             await callBasicRelay({
               relay,
@@ -555,6 +559,8 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
             expect(vowDaiBalanceAfterMint).to.be.eq(vowDaiBalanceBefore.add(feeInRad))
             const l1BalanceAfterMint = await l1Sdk.dai.balanceOf(userAddress)
             expect(l1BalanceAfterMint).to.be.eq(l1BalanceBeforeMint.add(amt).sub(gasFee).sub(fee))
+            const relayCallerAfterMint = await l1Sdk.dai.balanceOf(l1Signer.address)
+            expect(relayCallerAfterMint).to.be.eq(relayCallerBeforeMint.add(gasFee))
           } finally {
             // cleanup
             await relayTxToL1(l2WormholeBridge.connect(l2User).flush(masterDomain))
