@@ -17,6 +17,7 @@ import {
 } from '../typechain'
 import { deployUsingFactory, getContractFactory, toEthersBigNumber, toRad, toRay, toWad, waitForTx } from './helpers'
 import {
+  callBasicRelay,
   deployFileJoinFeesSpell,
   deployFileJoinLineSpell,
   deployPushBadDebtSpell,
@@ -26,7 +27,6 @@ import {
   RelayTxToL1Function,
   setupTest,
 } from './wormhole'
-import { callBasicRelay } from './wormhole/relay'
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR) // turn off warnings
 const bytes32 = ethers.utils.formatBytes32String
