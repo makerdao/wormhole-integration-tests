@@ -56,6 +56,10 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
     let ttl: number
     let forwardTimeToAfterFinalization: ForwardTimeFunction
 
+    // Note: we use before() instead of beforeEach() for the test setup and perform some manual cleanup at
+    // the end of some tests (in `finally` blocks) in order to minimize the running time and testnet ETH cost
+    // of the Arbitrum tests running on the Rinkeby network. This should be changed once Arbitrum supports
+    // running a local blockchain.
     before(async () => {
       ;({
         ilk,

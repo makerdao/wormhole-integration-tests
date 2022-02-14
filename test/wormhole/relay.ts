@@ -34,7 +34,6 @@ export async function callBasicRelay({
     l2WormholeBridgeInterface,
     oracleWallets,
   )
-
   const payload = arrayify(
     keccak256(
       hexConcat([
@@ -45,8 +44,7 @@ export async function callBasicRelay({
       ]),
     ),
   )
-  const sig = await receiver.signMessage(payload)
-  const { r, s, v } = splitSignature(sig)
+  const { r, s, v } = splitSignature(await receiver.signMessage(payload))
   console.log('Calling BasicRelay.relay()...')
   return await waitForTx(
     relay.connect(l1Signer).relay(wormholeGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s),
