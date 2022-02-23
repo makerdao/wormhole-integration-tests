@@ -72,12 +72,15 @@ export async function deployWormhole({
   await waitForTx(join.rely(oracleAuth.address))
   await waitForTx(join.rely(router.address))
   await waitForTx(join.rely(sdk.pause_proxy.address))
+  await waitForTx(join.rely(sdk.esm.address))
   await waitForTx(join.deny(await defaultSigner.getAddress()))
 
   await waitForTx(oracleAuth.rely(sdk.pause_proxy.address))
+  await waitForTx(oracleAuth.rely(sdk.esm.address))
   await waitForTx(oracleAuth.deny(await defaultSigner.getAddress()))
 
   await waitForTx(router.rely(sdk.pause_proxy.address))
+  await waitForTx(router.rely(sdk.esm.address))
   await waitForTx(router.deny(await defaultSigner.getAddress()))
 
   return { join, oracleAuth, router, constantFee, relay }
