@@ -16,6 +16,7 @@ import {
 } from '../../typechain'
 import { RetryProvider } from '../helpers/RetryProvider'
 import { BaseBridgeSdk, WormholeBridgeSdk } from './bridge'
+import { performSanityChecks } from './checks'
 import { RelayTxToL1Function, RelayTxToL2Function } from './messages'
 import { configureWormhole, WormholeSdk } from './wormhole'
 
@@ -99,8 +100,10 @@ export async function setupTest({
 
   const l1Provider = new ethers.providers.JsonRpcProvider(l1Rpc)
   const l2Provider = new RetryProvider(5, l2Rpc)
-  console.log('Current L1 block: ', (await l1Provider.getBlockNumber()).toString())
-  console.log('Current L2 block: ', (await l2Provider.getBlockNumber()).toString())
+  const l1StartingBlock = await l1Provider.getBlockNumber()
+  const l2StartingBlock = await l2Provider.getBlockNumber()
+  console.log('Current L1 block: ', l1StartingBlock)
+  console.log('Current L2 block: ', l2StartingBlock)
 
   const l1Signer = new ethers.Wallet(pkey, l1Provider)
   const l2Signer = new ethers.Wallet(pkey, l2Provider)
@@ -146,6 +149,19 @@ export async function setupTest({
     relayTxToL2,
     addWormholeDomainSpell,
   })
+
+  await performSanityChecks(
+    l1Signer,
+    l1Sdk,
+    wormholeSdk,
+    baseBridgeSdk,
+    wormholeBridgeSdk,
+    l1StartingBlock,
+    l2StartingBlock,
+    false,
+    masterDomain,
+    domain,
+  )
 
   console.log('Setup complete.')
 

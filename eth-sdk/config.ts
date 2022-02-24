@@ -54,6 +54,7 @@ export default defineConfig({
       dai_join: '0x6a4017c221335db1eD44C89C3d12841924EeCB79',
       vow: '0xD9dFdf1f1604eF572EFd9c8c2e5c6DDca659150A',
       pause_proxy: '0x4463830546A8cFcFa1b6Eb660Df17A29a4F4e06F',
+      esm: '0x0000000000000000000000000000000000000000', // not deployed on rinkeby?
       dai: '0x17B729a6Ac1f265090cbb4AecBdd53E34664C00e',
       fake_bridge: '0xc710c7eed1f6d29bc4251c1064f5b27824af72b8', // modified arbitrum bridge allowing arbitrary L2>L1 message passing without delay
     },
