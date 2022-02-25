@@ -1,4 +1,4 @@
-import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
+import { MainnetSdk } from '@dethcrypto/eth-sdk-client'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { randomBytes } from '@ethersproject/random'
 import { getOptionalEnv, getRequiredEnv } from '@makerdao/hardhat-utils'
@@ -24,7 +24,7 @@ const bytes32 = ethers.utils.formatBytes32String
 
 const masterDomain = bytes32('L1')
 
-export type Sdk = MainnetSdk | RinkebySdk
+export type MakerSdk = MainnetSdk['maker']
 
 export interface DomainSetupOpts {
   l1Signer: Wallet
@@ -41,7 +41,7 @@ export interface DomainSetupOpts {
 }
 
 export interface DomainSetupResult {
-  l1Sdk: Sdk
+  makerSdk: MakerSdk
   wormholeSdk: WormholeSdk
   relayTxToL1: RelayTxToL1Function
   relayTxToL2: RelayTxToL2Function
@@ -80,7 +80,7 @@ interface SetupTestResult {
   l1Escrow: L1Escrow
   l2WormholeBridge: any
   relayTxToL1: RelayTxToL1Function
-  l1Sdk: Sdk
+  makerSdk: MakerSdk
   ttl: number
   forwardTimeToAfterFinalization: ForwardTimeFunction
 }
@@ -115,7 +115,7 @@ export async function setupTest({
   const ilk: string = bytes32('WH_' + Buffer.from(randomBytes(14)).toString('hex'))
 
   const {
-    l1Sdk,
+    makerSdk: l1Sdk,
     relayTxToL1,
     relayTxToL2,
     wormholeBridgeSdk,
@@ -139,7 +139,7 @@ export async function setupTest({
   })
 
   await configureWormhole({
-    sdk: l1Sdk,
+    makerSdk: l1Sdk,
     wormholeSdk,
     joinDomain: masterDomain,
     defaultSigner: l1Signer,
@@ -166,7 +166,7 @@ export async function setupTest({
   console.log('Setup complete.')
 
   return {
-    l1Sdk,
+    makerSdk: l1Sdk,
     l1Signer,
     l1Provider,
     l1User,

@@ -1,4 +1,3 @@
-import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { JsonRpcProvider, TransactionReceipt } from '@ethersproject/providers'
 import { BigNumber, BigNumberish, Contract, Signer } from 'ethers'
 
@@ -9,10 +8,11 @@ import {
   WormholeConstantFee__factory,
 } from '../../typechain/'
 import { deployUsingFactory, getContractFactory, impersonateAccount, waitForTx } from '../helpers'
+import { MakerSdk } from '.'
 
 interface PushBadDebtSpellDeployOpts {
   l1Signer: Signer
-  sdk: MainnetSdk | RinkebySdk
+  sdk: MakerSdk
   wormholeJoinAddress: string
   sourceDomain: string
   badDebt: BigNumber
@@ -39,7 +39,7 @@ export async function deployPushBadDebtSpell(
 
 interface FileJoinLineSpellDeployOpts {
   l1Signer: Signer
-  sdk: MainnetSdk | RinkebySdk
+  sdk: MakerSdk
   wormholeJoinAddress: string
   sourceDomain: string
   line: BigNumber
@@ -64,7 +64,7 @@ export async function deployFileJoinLineSpell(
 
 interface FileJoinFeesSpellDeployOpts {
   l1Signer: Signer
-  sdk: MainnetSdk | RinkebySdk
+  sdk: MakerSdk
   wormholeJoinAddress: string
   sourceDomain: string
   fee: BigNumberish
@@ -93,11 +93,7 @@ export async function deployFileJoinFeesSpell(
   return { castFileJoinFeesSpell }
 }
 
-export async function executeSpell(
-  l1Signer: Signer,
-  sdk: MainnetSdk | RinkebySdk,
-  spell: Contract,
-): Promise<TransactionReceipt> {
+export async function executeSpell(l1Signer: Signer, sdk: MakerSdk, spell: Contract): Promise<TransactionReceipt> {
   const pauseSigner = await getPauseSigner(sdk, l1Signer)
   console.log(`Executing spell ${spell.address}...`)
   return await waitForTx(
@@ -107,7 +103,7 @@ export async function executeSpell(
   )
 }
 
-export async function getPauseSigner(sdk: MainnetSdk | RinkebySdk, l1Signer: Signer): Promise<Signer> {
+export async function getPauseSigner(sdk: MakerSdk, l1Signer: Signer): Promise<Signer> {
   const pauseAddress = await sdk.pause_proxy.owner()
   if ((await l1Signer.getAddress()) === pauseAddress) return l1Signer // on rinkeby, the l1Signer is the owner of the pause_proxy
   return await impersonateAccount(pauseAddress, l1Signer.provider as JsonRpcProvider) // on mainnet-fork, we impersonate the owner of the pause_proxy

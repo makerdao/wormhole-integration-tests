@@ -1,4 +1,76 @@
-async function main() {}
+import { getKovanSdk, getOptimismKovanSdk } from '@dethcrypto/eth-sdk-client'
+import { getRequiredEnv } from '@makerdao/hardhat-utils'
+import * as dotenv from 'dotenv'
+import * as ethers from 'ethers'
+dotenv.config()
+
+import { deployOptimismWormholeBridge, OptimismBaseBridgeSdk, OptimismRollupSdk } from '../test/optimism'
+import { deployWormhole } from '../test/wormhole'
+
+const bytes32 = ethers.utils.formatBytes32String
+
+async function main() {
+  const l1Rpc = getRequiredEnv('KOVAN_OPTIMISM_L1_RPC')
+  const l2Rpc = getRequiredEnv('KOVAN_OPTIMISM_L2_RPC')
+  const deployerPrivKey = getRequiredEnv('KOVAN_OPTIMISM_DEPLOYER_PRIV_KEY')
+  const fee = 0 // 0 fees
+  const feeTTL = 60 * 60 * 24 * 8 // flush should happen more or less, 1 day after initWormhole, and should take 7 days to finalize
+
+  const ilk: string = bytes32('WH-KOVAN-TEST-1')
+  const masterDomain = bytes32('KOVAN-MASTER-1')
+  const optimismDomain = bytes32('KOVAN-SLAVE-OPTIMISM-1')
+
+  const l1Provider = new ethers.providers.JsonRpcProvider(l1Rpc)
+  const l2Provider = new ethers.providers.JsonRpcProvider(l2Rpc)
+  const l1StartingBlock = await l1Provider.getBlockNumber()
+  const l2StartingBlock = await l2Provider.getBlockNumber()
+  console.log('Current L1 block: ', l1StartingBlock)
+  console.log('Current L2 block: ', l2StartingBlock)
+  // todo verify l1Provider and l2Provider chainIds
+
+  const l1Signer = new ethers.Wallet(deployerPrivKey, l1Provider)
+  const l2Signer = new ethers.Wallet(deployerPrivKey, l2Provider)
+
+  const kovanSdk = getKovanSdk(l1Signer)
+  const optimismKovanSdk = getOptimismKovanSdk(l2Signer)
+  const optimismRollupSdk: OptimismRollupSdk = {
+    l1StandardBridge: kovanSdk.optimism.l1StandardBridge,
+    l1XDomainMessenger: kovanSdk.optimism.xDomainMessenger,
+    l1StateCommitmentChain: kovanSdk.optimism.stateCommitmentChain,
+    l2StandardBridge: optimismKovanSdk.optimism.l2StandardBridge,
+    l2XDomainMessenger: optimismKovanSdk.optimism.xDomainMessenger,
+  }
+
+  const baseBridgeSdk: OptimismBaseBridgeSdk = {
+    l1Escrow: kovanSdk.optimismDaiBridge.l1Escrow,
+    l1GovRelay: kovanSdk.optimismDaiBridge.l1GovernanceRelay,
+    l1DaiTokenBridge: kovanSdk.optimismDaiBridge.l1DAITokenBridge,
+    l2Dai: optimismKovanSdk.optimismDaiBridge.dai as any, // @todo: due to a problem in eth-sdk daiBridge.dai has l1Dai type...
+    l2GovRelay: optimismKovanSdk.optimismDaiBridge.l2GovernanceRelay,
+    l2DaiTokenBridge: optimismKovanSdk.optimismDaiBridge.l2DAITokenBridge,
+  }
+
+  const wormholeSdk = await deployWormhole({
+    defaultSigner: l1Signer,
+    makerSdk: kovanSdk.maker,
+    ilk,
+    joinDomain: masterDomain,
+    globalFee: fee,
+    globalFeeTTL: feeTTL,
+  })
+
+  const wormholeBridgeSdk = await deployOptimismWormholeBridge({
+    makerSdk: kovanSdk.maker,
+    l1Signer,
+    l2Signer,
+    wormholeSdk,
+    baseBridgeSdk,
+    slaveDomain: optimismDomain,
+    optimismRollupSdk,
+  })
+
+  console.log(wormholeBridgeSdk)
+}
 
 main()
   .then(() => console.log('DONE'))

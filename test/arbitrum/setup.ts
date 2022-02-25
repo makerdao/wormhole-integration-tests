@@ -1,4 +1,4 @@
-import { getRinkebySdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
+import { getRinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { sleep } from '@eth-optimism/core-utils'
 import { ContractReceipt, ContractTransaction } from 'ethers'
 import { formatEther } from 'ethers/lib/utils'
@@ -33,7 +33,8 @@ export async function setupArbitrumTests({
   line,
 }: DomainSetupOpts): Promise<DomainSetupResult> {
   const l1Sdk = getRinkebySdk(l1Signer)
-  const rinkebySdk = l1Sdk as RinkebySdk
+  const makerSdk = l1Sdk.maker
+  const arbitrumSdk = l1Sdk.arbitrum
   const arbitrumAddresses = getArbitrumAddresses()
 
   const userEthAmount = ethers.utils.parseEther('0.1')
@@ -45,14 +46,14 @@ export async function setupArbitrumTests({
     console.log('Funding l2User ETH balance...')
     await l2Signer.sendTransaction({ to: l1User.address, value: userEthAmount })
   }
-  if ((await l1Sdk.dai.balanceOf(l1User.address)).lt(l2DaiAmount)) {
+  if ((await makerSdk.dai.balanceOf(l1User.address)).lt(l2DaiAmount)) {
     console.log('Funding l1User DAI balance...')
-    await l1Sdk.dai.transfer(l1User.address, l2DaiAmount)
+    await makerSdk.dai.transfer(l1User.address, l2DaiAmount)
   }
 
   const wormholeSdk = await deployWormhole({
     defaultSigner: l1Signer,
-    sdk: l1Sdk,
+    makerSdk,
     ilk,
     joinDomain: masterDomain,
     globalFee: fee,
@@ -62,11 +63,11 @@ export async function setupArbitrumTests({
   const baseBridgeSdk = await deployArbitrumBaseBridge({
     l1Signer,
     l2Signer,
-    sdk: rinkebySdk,
+    makerSdk,
     arbitrumAddresses,
   })
   const wormholeBridgeSdk = await deployArbitrumWormholeBridge({
-    rinkebySdk,
+    makerSdk,
     l1Signer,
     l2Signer,
     wormholeSdk,
@@ -75,7 +76,7 @@ export async function setupArbitrumTests({
     arbitrumAddresses,
   })
 
-  const relayTxToL1 = makeRelayTxToL1(wormholeBridgeSdk.l2WormholeBridge, l1Sdk, l1Signer)
+  const relayTxToL1 = makeRelayTxToL1(wormholeBridgeSdk.l2WormholeBridge, arbitrumSdk, l1Signer)
   const relayTxToL2 = (
     l1Tx: Promise<ContractTransaction> | ContractTransaction | Promise<ContractReceipt> | ContractReceipt,
   ) => waitToRelayTxsToL2(l1Tx, arbitrumAddresses.l1.inbox, l1Provider, l2Provider)
@@ -121,7 +122,7 @@ export async function setupArbitrumTests({
     wormholeSdk.router.address,
     wormholeBridgeSdk.l1WormholeBridge.address,
     baseBridgeSdk.l1Escrow.address,
-    rinkebySdk.dai.address,
+    makerSdk.dai.address,
     {
       l1GovRelay: baseBridgeSdk.l1GovRelay.address,
       l2ConfigureDomainSpell: l2AddWormholeDomainSpell.address,
@@ -134,22 +135,22 @@ export async function setupArbitrumTests({
   console.log('Arbitrum L1 spell deployed at:', addWormholeDomainSpell.address)
 
   console.log('Moving some DAI to L2...')
-  await waitForTx(l1Sdk.dai.connect(l1Signer).transfer(l1User.address, l2DaiAmount))
-  await waitForTx(l1Sdk.dai.connect(l1User).approve(baseBridgeSdk.l1DaiTokenBridge.address, l2DaiAmount))
+  await waitForTx(makerSdk.dai.connect(l1Signer).transfer(l1User.address, l2DaiAmount))
+  await waitForTx(makerSdk.dai.connect(l1User).approve(baseBridgeSdk.l1DaiTokenBridge.address, l2DaiAmount))
   await relayTxToL2(
     depositToStandardBridge({
       l2Provider: l2Provider,
       from: l1User,
       to: l1User.address,
       l1Gateway: baseBridgeSdk.l1DaiTokenBridge,
-      l1TokenAddress: l1Sdk.dai.address,
+      l1TokenAddress: makerSdk.dai.address,
       l2GatewayAddress: baseBridgeSdk.l2DaiTokenBridge.address,
       deposit: l2DaiAmount.toString(),
     }),
   )
   console.log('Arbitrum setup complete.')
   return {
-    l1Sdk,
+    makerSdk,
     relayTxToL1,
     relayTxToL2,
     wormholeSdk,

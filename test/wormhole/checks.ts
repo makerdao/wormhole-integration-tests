@@ -4,11 +4,12 @@ import { Signer } from 'ethers'
 import { compact } from 'lodash'
 
 import { AuthableLike } from '../pe-utils/auth'
-import { BaseBridgeSdk, Sdk, WormholeBridgeSdk, WormholeSdk } from '.'
+import { BaseBridgeSdk, WormholeBridgeSdk, WormholeSdk } from '.'
+import { MakerSdk } from './setup'
 
 export async function performSanityChecks(
   l1Signer: Signer,
-  sdk: Sdk,
+  makerSdk: MakerSdk,
   wormholeSdk: WormholeSdk,
   baseBridgeSdk: BaseBridgeSdk,
   wormholeBridgeSdk: WormholeBridgeSdk,
@@ -31,21 +32,24 @@ export async function performSanityChecks(
   await checkPermissions(wormholeSdk.join, l1BlockOfBeginningOfDeployment, [
     wormholeSdk.oracleAuth.address,
     wormholeSdk.router.address,
-    sdk.pause_proxy.address,
-    sdk.esm.address,
+    makerSdk.pause_proxy.address,
+    makerSdk.esm.address,
   ])
   await checkPermissions(wormholeSdk.oracleAuth, l1BlockOfBeginningOfDeployment, [
-    sdk.pause_proxy.address,
-    sdk.esm.address,
+    makerSdk.pause_proxy.address,
+    makerSdk.esm.address,
   ])
-  await checkPermissions(wormholeSdk.router, l1BlockOfBeginningOfDeployment, [sdk.pause_proxy.address, sdk.esm.address])
+  await checkPermissions(wormholeSdk.router, l1BlockOfBeginningOfDeployment, [
+    makerSdk.pause_proxy.address,
+    makerSdk.esm.address,
+  ])
 
   await checkPermissions(wormholeBridgeSdk.l2WormholeBridge, l2BlockOfBeginningOfDeployment, [
     baseBridgeSdk.l2GovRelay.address,
   ])
 
-  expect(await wormholeSdk.join.vat()).to.be.eq(sdk.vat.address)
-  expect(await wormholeSdk.join.vow()).to.be.eq(sdk.vow.address)
+  expect(await wormholeSdk.join.vat()).to.be.eq(makerSdk.vat.address)
+  expect(await wormholeSdk.join.vow()).to.be.eq(makerSdk.vow.address)
   expect(await wormholeSdk.oracleAuth.wormholeJoin()).to.be.eq(wormholeSdk.join.address)
   expect(await wormholeSdk.router.gateways(masterDomain)).to.be.eq(wormholeSdk.join.address)
   expect(await wormholeSdk.router.gateways(slaveDomain)).to.be.eq(wormholeBridgeSdk.l1WormholeBridge.address)

@@ -1,4 +1,3 @@
-import { RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { expect } from 'chai'
 import { constants, Signer, Wallet } from 'ethers'
 
@@ -14,12 +13,13 @@ import {
 } from '../../typechain'
 import { ArbitrumAddresses, deployUsingFactory, getContractFactory, waitForTx } from '../helpers'
 import { getAddressOfNextDeployedContract } from '../pe-utils/address'
+import { MakerSdk } from '../wormhole'
 import { WormholeSdk } from '../wormhole/wormhole'
 
 interface ArbitrumWormholeBridgeDeployOpts {
   l1Signer: Signer
   l2Signer: Signer
-  rinkebySdk: RinkebySdk
+  makerSdk: MakerSdk
   arbitrumAddresses: ArbitrumAddresses
   domain: string
   wormholeSdk: WormholeSdk
@@ -42,7 +42,7 @@ export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeD
 
   const L1WormholeBridgeFactory = getContractFactory<L1DaiWormholeGateway__factory>('L1DaiWormholeGateway')
   const l1WormholeBridge = await deployUsingFactory(opts.l1Signer, L1WormholeBridgeFactory, [
-    opts.rinkebySdk.dai.address,
+    opts.makerSdk.dai.address,
     l2WormholeBridge.address,
     opts.arbitrumAddresses.l1.fake_inbox, // use a fake inbox that allows relaying arbitrary L2>L1 messages without delay
     opts.baseBridgeSdk.l1Escrow.address,
@@ -60,7 +60,7 @@ export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeD
 interface ArbitrumBaseBridgeDeployOpts {
   l1Signer: Signer
   l2Signer: Signer
-  sdk: RinkebySdk
+  makerSdk: MakerSdk
   arbitrumAddresses: ArbitrumAddresses
 }
 
@@ -78,7 +78,7 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
   const l2DaiGateway = await deployUsingFactory(
     opts.l2Signer,
     getContractFactory<L2DaiGateway__factory>('L2DaiGateway'),
-    [futureL1DaiGatewayAddress, l2Router.address, opts.sdk.dai.address, l2Dai.address],
+    [futureL1DaiGatewayAddress, l2Router.address, opts.makerSdk.dai.address, l2Dai.address],
   )
   console.log('L2DaiGateway deployed at: ', l2DaiGateway.address)
   await waitForTx(l2Dai.rely(l2DaiGateway.address))
@@ -90,7 +90,7 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
       l2DaiGateway.address,
       l1Router.address,
       opts.arbitrumAddresses.l1.inbox,
-      opts.sdk.dai.address,
+      opts.makerSdk.dai.address,
       l2Dai.address,
       l1Escrow.address,
     ],
@@ -112,10 +112,10 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
   expect(l1GovRelay.address).to.be.eq(futureL1GovRelayAddress, 'Future address doesnt match actual address')
 
   // bridge has to be approved on escrow because settling moves tokens
-  await waitForTx(l1Escrow.approve(opts.sdk.dai.address, l1DaiGateway.address, constants.MaxUint256))
-  await waitForTx(l1Escrow.rely(opts.sdk.pause_proxy.address))
+  await waitForTx(l1Escrow.approve(opts.makerSdk.dai.address, l1DaiGateway.address, constants.MaxUint256))
+  await waitForTx(l1Escrow.rely(opts.makerSdk.pause_proxy.address))
 
-  await waitForTx(l1GovRelay.rely(opts.sdk.pause_proxy.address))
+  await waitForTx(l1GovRelay.rely(opts.makerSdk.pause_proxy.address))
   await waitForTx(l1GovRelay.deny(await opts.l1Signer.getAddress()))
 
   await waitForTx(l2Dai.rely(l2GovRelay.address))

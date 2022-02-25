@@ -1,4 +1,3 @@
-import { MainnetSdk, RinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { BigNumber, BigNumberish, Contract, Signer } from 'ethers'
 import { ethers } from 'hardhat'
 import { assert } from 'ts-essentials'
@@ -18,20 +17,21 @@ import {
 } from '../../typechain'
 import { getContractFactory, waitForTx } from '../helpers'
 import { RelayTxToL2Function } from './messages'
+import { MakerSdk } from './setup'
 import { executeSpell } from './spell'
 
 export const OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME = 60 * 60 * 24 * 8 // flush should happen more or less, 1 day after initWormhole, and should take 7 days to finalize
 
 export async function deployWormhole({
   defaultSigner,
-  sdk,
+  makerSdk,
   ilk,
   joinDomain,
   globalFee,
   globalFeeTTL,
 }: {
   defaultSigner: Signer
-  sdk: MainnetSdk | RinkebySdk
+  makerSdk: MakerSdk
   ilk: string
   joinDomain: string
   globalFee: BigNumberish
@@ -45,7 +45,7 @@ export async function deployWormhole({
 }> {
   console.log('Deploying join...')
   const WormholeJoinFactory = getContractFactory<WormholeJoin__factory>('WormholeJoin', defaultSigner)
-  const join = await WormholeJoinFactory.deploy(sdk.vat.address, sdk.dai_join.address, ilk, joinDomain)
+  const join = await WormholeJoinFactory.deploy(makerSdk.vat.address, makerSdk.dai_join.address, ilk, joinDomain)
   console.log('WormholeJoin deployed at: ', join.address)
 
   console.log('Deploying constantFee...')
@@ -60,27 +60,27 @@ export async function deployWormhole({
 
   console.log('Deploying router...')
   const WormholeRouterFactory = getContractFactory<WormholeRouter__factory>('WormholeRouter', defaultSigner)
-  const router = await WormholeRouterFactory.deploy(sdk.dai.address)
+  const router = await WormholeRouterFactory.deploy(makerSdk.dai.address)
   console.log('WormholeRouter deployed at: ', router.address)
 
   console.log('Deploying relay...')
   const BasicRelayFactory = getContractFactory<BasicRelay__factory>('BasicRelay', defaultSigner)
-  const relay = await BasicRelayFactory.deploy(oracleAuth.address, sdk.dai_join.address, { gasLimit: 1500000 })
+  const relay = await BasicRelayFactory.deploy(oracleAuth.address, makerSdk.dai_join.address, { gasLimit: 1500000 })
   console.log('BasicRelay deployed at: ', relay.address)
 
   console.log('Finalizing permissions...')
   await waitForTx(join.rely(oracleAuth.address))
   await waitForTx(join.rely(router.address))
-  await waitForTx(join.rely(sdk.pause_proxy.address))
-  await waitForTx(join.rely(sdk.esm.address))
+  await waitForTx(join.rely(makerSdk.pause_proxy.address))
+  await waitForTx(join.rely(makerSdk.esm.address))
   await waitForTx(join.deny(await defaultSigner.getAddress()))
 
-  await waitForTx(oracleAuth.rely(sdk.pause_proxy.address))
-  await waitForTx(oracleAuth.rely(sdk.esm.address))
+  await waitForTx(oracleAuth.rely(makerSdk.pause_proxy.address))
+  await waitForTx(oracleAuth.rely(makerSdk.esm.address))
   await waitForTx(oracleAuth.deny(await defaultSigner.getAddress()))
 
-  await waitForTx(router.rely(sdk.pause_proxy.address))
-  await waitForTx(router.rely(sdk.esm.address))
+  await waitForTx(router.rely(makerSdk.pause_proxy.address))
+  await waitForTx(router.rely(makerSdk.esm.address))
   await waitForTx(router.deny(await defaultSigner.getAddress()))
 
   return { join, oracleAuth, router, constantFee, relay }
@@ -88,7 +88,7 @@ export async function deployWormhole({
 export type WormholeSdk = Awaited<ReturnType<typeof deployWormhole>>
 
 export async function configureWormhole({
-  sdk,
+  makerSdk,
   wormholeSdk,
   joinDomain,
   defaultSigner,
@@ -98,7 +98,7 @@ export async function configureWormhole({
   relayTxToL2,
   addWormholeDomainSpell,
 }: {
-  sdk: MainnetSdk | RinkebySdk
+  makerSdk: MakerSdk
   wormholeSdk: WormholeSdk
   joinDomain: string
   defaultSigner: Signer
@@ -117,8 +117,8 @@ export async function configureWormhole({
   const configureSpell = await L1ConfigureWormholeSpellFactory.deploy(
     joinDomain,
     wormholeSdk.join.address,
-    sdk.vow.address,
-    sdk.vat.address,
+    makerSdk.vow.address,
+    makerSdk.vat.address,
     globalLine,
     wormholeSdk.router.address,
     wormholeSdk.oracleAuth.address,
@@ -126,10 +126,10 @@ export async function configureWormhole({
     oracleAddresses[1],
     oracleAddresses[2],
   )
-  await executeSpell(defaultSigner, sdk, configureSpell)
+  await executeSpell(defaultSigner, makerSdk, configureSpell)
 
   console.log(`Executing spell to add domain ${ethers.utils.parseBytes32String(domain)}...`)
-  const spellExecutionTx = await executeSpell(defaultSigner, sdk, addWormholeDomainSpell)
+  const spellExecutionTx = await executeSpell(defaultSigner, makerSdk, addWormholeDomainSpell)
 
   console.log('Waiting for xchain spell to execute')
   await relayTxToL2(spellExecutionTx)

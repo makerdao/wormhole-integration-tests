@@ -1,5 +1,5 @@
 export * from '../arbitrum/addresses'
-export * from '../optimism/addresses'
+export * from '../optimism/sdk'
 export * from './artifacts'
 export * from './gas'
 export * from './hardhat'

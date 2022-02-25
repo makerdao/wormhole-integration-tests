@@ -9,4 +9,4 @@ cp -f ./ops/dtl.env ../repos/optimism-monorepo/ops/envs/dtl.env
 cd ../repos/optimism-monorepo/ops
 
 docker-compose down -v
-docker-compose up
+docker-compose up -d
