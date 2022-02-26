@@ -27,14 +27,14 @@ export async function getDynamicOptimismRollupSdk(l1Signer: Signer, l2Signer: Si
   const addresses = await getDynamicOptimismAddresses()
 
   return {
-    l1StandardBridge: new Contract(addresses.l1.standardBridge, new Interface([]), l1Signer),
+    l1StandardBridge: new Contract(addresses.l1.standardBridge, getContractDefinition('L1StandardBridge').abi, l1Signer),
     l1XDomainMessenger: new Contract(
       addresses.l1.xDomainMessenger,
       getContractDefinition('L1CrossDomainMessenger').abi,
       l1Signer,
     ),
-    l1StateCommitmentChain: new Contract(addresses.l1.stateCommitmentChain, new Interface([]), l1Signer),
-    l2StandardBridge: new Contract(addresses.l2.standardBridge, new Interface([]), l2Signer),
+    l1StateCommitmentChain: new Contract(addresses.l1.stateCommitmentChain, getContractDefinition('StateCommitmentChain').abi, l1Signer),
+    l2StandardBridge: new Contract(addresses.l2.standardBridge, getContractDefinition('L2StandardBridge').abi, l2Signer),
     l2XDomainMessenger: new Contract(
       addresses.l2.xDomainMessenger,
       getContractDefinition('L2CrossDomainMessenger').abi,
