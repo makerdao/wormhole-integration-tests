@@ -11,7 +11,7 @@ import {
   L2DAIWormholeBridge__factory,
   L2OptimismGovernanceRelay__factory,
 } from '../../typechain'
-import { deployUsingFactory, getContractFactory, mintEther } from '../helpers'
+import { deployUsingFactoryAndVerify, getContractFactory, mintEther } from '../helpers'
 import { OptimismRollupSdk, waitForTx } from '../helpers'
 import { getAddressOfNextDeployedContract } from '../pe-utils/address'
 import { MakerSdk } from '../wormhole'
@@ -30,8 +30,8 @@ interface OptimismWormholeBridgeDeployOpts {
 export async function deployOptimismWormholeBridge(opts: OptimismWormholeBridgeDeployOpts) {
   console.log('Deploying Optimism Wormhole Bridge...')
   const futureL1WormholeBridgeAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
-  const L2WormholeBridgeFactory = getContractFactory<L2DAIWormholeBridge__factory>('L2DAIWormholeBridge', opts.l2Signer)
-  const l2WormholeBridge = await deployUsingFactory(opts.l2Signer, L2WormholeBridgeFactory, [
+  const L2WormholeBridgeFactory = getContractFactory<L2DAIWormholeBridge__factory>('L2DAIWormholeBridge')
+  const l2WormholeBridge = await deployUsingFactoryAndVerify(opts.l2Signer, L2WormholeBridgeFactory, [
     opts.optimismRollupSdk.l2XDomainMessenger.address,
     opts.baseBridgeSdk.l2Dai.address,
     futureL1WormholeBridgeAddress,
@@ -40,7 +40,7 @@ export async function deployOptimismWormholeBridge(opts: OptimismWormholeBridgeD
   console.log('L2DAIWormholeBridge deployed at: ', l2WormholeBridge.address)
 
   const L1WormholeBridgeFactory = getContractFactory<L1DAIWormholeBridge__factory>('L1DAIWormholeBridge')
-  const l1WormholeBridge = await deployUsingFactory(opts.l1Signer, L1WormholeBridgeFactory, [
+  const l1WormholeBridge = await deployUsingFactoryAndVerify(opts.l1Signer, L1WormholeBridgeFactory, [
     opts.makerSdk.dai.address,
     l2WormholeBridge.address,
     opts.optimismRollupSdk.l1XDomainMessenger.address,
@@ -64,16 +64,24 @@ interface OptimismBaseBridgeDeployOpts {
 }
 
 export async function deployOptimismBaseBridge(opts: OptimismBaseBridgeDeployOpts) {
-  const l1Escrow = await deployUsingFactory(opts.l1Signer, getContractFactory<L1Escrow__factory>('L1Escrow'), [])
+  const l1Escrow = await deployUsingFactoryAndVerify(
+    opts.l1Signer,
+    getContractFactory<L1Escrow__factory>('L1Escrow'),
+    [],
+  )
   console.log('L1Escrow deployed at: ', l1Escrow.address)
 
   const l1Provider = opts.l1Signer.provider! as ethers.providers.JsonRpcProvider
   await mintEther(l1Escrow.address, l1Provider)
 
-  const l2Dai = await deployUsingFactory(opts.l2Signer, getContractFactory<Dai__factory>('Dai', opts.l2Signer), [])
+  const l2Dai = await deployUsingFactoryAndVerify(
+    opts.l2Signer,
+    getContractFactory<Dai__factory>('Dai', opts.l2Signer),
+    [],
+  )
 
   const futureL1DAITokenBridgeAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
-  const l2DaiTokenBridge = await deployUsingFactory(
+  const l2DaiTokenBridge = await deployUsingFactoryAndVerify(
     opts.l2Signer,
     getContractFactory<L2DAITokenBridge__factory>('L2DAITokenBridge'),
     [
@@ -85,7 +93,7 @@ export async function deployOptimismBaseBridge(opts: OptimismBaseBridgeDeployOpt
   )
   await waitForTx(l2Dai.rely(l2DaiTokenBridge.address))
 
-  const l1DaiTokenBridge = await deployUsingFactory(
+  const l1DaiTokenBridge = await deployUsingFactoryAndVerify(
     opts.l1Signer,
     getContractFactory<L1DAITokenBridge__factory>('L1DAITokenBridge'),
     [
@@ -99,12 +107,12 @@ export async function deployOptimismBaseBridge(opts: OptimismBaseBridgeDeployOpt
   expect(l1DaiTokenBridge.address).to.be.eq(futureL1DAITokenBridgeAddress, 'Future address doesnt match actual address')
 
   const futureL1GovRelayAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
-  const l2GovRelay = await deployUsingFactory(
+  const l2GovRelay = await deployUsingFactoryAndVerify(
     opts.l2Signer,
     getContractFactory<L2OptimismGovernanceRelay__factory>('L2OptimismGovernanceRelay'),
     [opts.optimismRollupSdk.l2XDomainMessenger.address, futureL1GovRelayAddress],
   )
-  const l1GovRelay = await deployUsingFactory(
+  const l1GovRelay = await deployUsingFactoryAndVerify(
     opts.l1Signer,
     getContractFactory<L1OptimismGovernanceRelay__factory>('L1OptimismGovernanceRelay'),
     [l2GovRelay.address, opts.optimismRollupSdk.l1XDomainMessenger.address],

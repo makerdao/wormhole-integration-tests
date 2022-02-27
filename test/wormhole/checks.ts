@@ -16,8 +16,6 @@ export async function performSanityChecks(
   l1BlockOfBeginningOfDeployment: number,
   l2BlockOfBeginningOfDeployment: number,
   includeDeployer: boolean,
-  masterDomain: string,
-  slaveDomain: string,
 ) {
   console.log('Performing sanity checks...')
 
@@ -49,10 +47,7 @@ export async function performSanityChecks(
   ])
 
   expect(await wormholeSdk.join.vat()).to.be.eq(makerSdk.vat.address)
-  expect(await wormholeSdk.join.vow()).to.be.eq(makerSdk.vow.address)
   expect(await wormholeSdk.oracleAuth.wormholeJoin()).to.be.eq(wormholeSdk.join.address)
-  expect(await wormholeSdk.router.gateways(masterDomain)).to.be.eq(wormholeSdk.join.address)
-  expect(await wormholeSdk.router.gateways(slaveDomain)).to.be.eq(wormholeBridgeSdk.l1WormholeBridge.address)
   expect(await wormholeBridgeSdk.l1WormholeBridge.escrow()).to.be.eq(baseBridgeSdk.l1Escrow.address)
 }
 

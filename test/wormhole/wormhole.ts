@@ -15,7 +15,7 @@ import {
   WormholeRouter,
   WormholeRouter__factory,
 } from '../../typechain'
-import { getContractFactory, waitForTx } from '../helpers'
+import { deployUsingFactoryAndVerify, getContractFactory, waitForTx } from '../helpers'
 import { RelayTxToL2Function } from './messages'
 import { MakerSdk } from './setup'
 import { executeSpell } from './spell'
@@ -44,28 +44,37 @@ export async function deployWormhole({
   relay: BasicRelay
 }> {
   console.log('Deploying join...')
-  const WormholeJoinFactory = getContractFactory<WormholeJoin__factory>('WormholeJoin', defaultSigner)
-  const join = await WormholeJoinFactory.deploy(makerSdk.vat.address, makerSdk.dai_join.address, ilk, joinDomain)
+  const WormholeJoinFactory = getContractFactory<WormholeJoin__factory>('WormholeJoin')
+  const join = await deployUsingFactoryAndVerify(defaultSigner, WormholeJoinFactory, [
+    makerSdk.vat.address,
+    makerSdk.dai_join.address,
+    ilk,
+    joinDomain,
+  ])
   console.log('WormholeJoin deployed at: ', join.address)
 
   console.log('Deploying constantFee...')
-  const ConstantFeeFactory = getContractFactory<WormholeConstantFee__factory>('WormholeConstantFee', defaultSigner)
-  const constantFee = await ConstantFeeFactory.deploy(globalFee, globalFeeTTL)
+  const ConstantFeeFactory = getContractFactory<WormholeConstantFee__factory>('WormholeConstantFee')
+  const constantFee = await deployUsingFactoryAndVerify(defaultSigner, ConstantFeeFactory, [globalFee, globalFeeTTL])
   console.log('ConstantFee deployed at: ', constantFee.address)
 
   console.log('Deploying oracleAuth...')
-  const WormholeOracleAuthFactory = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', defaultSigner)
-  const oracleAuth = await WormholeOracleAuthFactory.deploy(join.address)
+  const WormholeOracleAuthFactory = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth')
+  const oracleAuth = await deployUsingFactoryAndVerify(defaultSigner, WormholeOracleAuthFactory, [join.address])
   console.log('WormholeOracleAuth deployed at: ', oracleAuth.address)
 
   console.log('Deploying router...')
-  const WormholeRouterFactory = getContractFactory<WormholeRouter__factory>('WormholeRouter', defaultSigner)
-  const router = await WormholeRouterFactory.deploy(makerSdk.dai.address)
+  const WormholeRouterFactory = getContractFactory<WormholeRouter__factory>('WormholeRouter')
+  const router = await deployUsingFactoryAndVerify(defaultSigner, WormholeRouterFactory, [makerSdk.dai.address])
   console.log('WormholeRouter deployed at: ', router.address)
 
   console.log('Deploying relay...')
-  const BasicRelayFactory = getContractFactory<BasicRelay__factory>('BasicRelay', defaultSigner)
-  const relay = await BasicRelayFactory.deploy(oracleAuth.address, makerSdk.dai_join.address, { gasLimit: 1500000 })
+  const BasicRelayFactory = getContractFactory<BasicRelay__factory>('BasicRelay')
+  const relay = await deployUsingFactoryAndVerify(defaultSigner, BasicRelayFactory, [
+    oracleAuth.address,
+    makerSdk.dai_join.address,
+    { gasLimit: 1500000 },
+  ])
   console.log('BasicRelay deployed at: ', relay.address)
 
   console.log('Finalizing permissions...')

@@ -159,8 +159,6 @@ export async function setupTest({
     l1StartingBlock,
     l2StartingBlock,
     false,
-    masterDomain,
-    domain,
   )
 
   console.log('Setup complete.')

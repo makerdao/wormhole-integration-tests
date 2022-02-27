@@ -1,6 +1,7 @@
 export * from '../arbitrum/addresses'
 export * from '../optimism/sdk'
 export * from './artifacts'
+export * from './deploy'
 export * from './gas'
 export * from './hardhat'
 export * from './numeric'
