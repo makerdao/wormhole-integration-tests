@@ -1,4 +1,5 @@
 import { ContractReceipt, ContractTransaction } from 'ethers'
+
 import { retry } from './async'
 
 export async function waitForTx(tx: Promise<ContractTransaction>, _confirmations?: number): Promise<ContractReceipt> {
