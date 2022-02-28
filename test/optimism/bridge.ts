@@ -49,8 +49,8 @@ export async function deployOptimismWormholeBridge(opts: OptimismWormholeBridgeD
   ])
   expect(l1WormholeBridge.address).to.be.eq(futureL1WormholeBridgeAddress, 'Future address doesnt match actual address')
 
-  await l2WormholeBridge.rely(opts.baseBridgeSdk.l2GovRelay.address)
-  await l2WormholeBridge.deny(await opts.l2Signer.getAddress())
+  await waitForTx(l2WormholeBridge.rely(opts.baseBridgeSdk.l2GovRelay.address))
+  await waitForTx(l2WormholeBridge.deny(await opts.l2Signer.getAddress()))
 
   return { l2WormholeBridge, l1WormholeBridge }
 }
@@ -123,14 +123,14 @@ export async function deployOptimismBaseBridge(opts: OptimismBaseBridgeDeployOpt
   await waitForTx(l1Escrow.approve(opts.makerSdk.dai.address, l1DaiTokenBridge.address, constants.MaxUint256))
   await waitForTx(l1Escrow.rely(opts.makerSdk.pause_proxy.address))
 
-  await l1GovRelay.rely(opts.makerSdk.pause_proxy.address)
-  await l1GovRelay.deny(await opts.l1Signer.getAddress())
+  await waitForTx(l1GovRelay.rely(opts.makerSdk.pause_proxy.address))
+  await waitForTx(l1GovRelay.deny(await opts.l1Signer.getAddress()))
 
-  await l2Dai.rely(l2GovRelay.address)
-  await l2Dai.deny(await opts.l2Signer.getAddress())
+  await waitForTx(l2Dai.rely(l2GovRelay.address))
+  await waitForTx(l2Dai.deny(await opts.l2Signer.getAddress()))
 
-  await l2DaiTokenBridge.rely(l2GovRelay.address)
-  await l2DaiTokenBridge.deny(await opts.l2Signer.getAddress())
+  await waitForTx(l2DaiTokenBridge.rely(l2GovRelay.address))
+  await waitForTx(l2DaiTokenBridge.deny(await opts.l2Signer.getAddress()))
 
   return {
     l2Dai,

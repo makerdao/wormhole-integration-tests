@@ -106,6 +106,6 @@ function getSdkAddresses(sdk: Dictionary<ethers.BaseContract>) {
 main()
   .then(() => console.log('DONE'))
   .catch((e) => {
-    console.error('ERR', e)
+    console.error(e)
     process.exit(1)
   })

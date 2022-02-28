@@ -13,6 +13,10 @@ const config: HardhatUserConfig = {
     defaultNetwork: {
       url: '',
     },
+    hardhat: {
+      // prevents gas estimations problems
+      gas: 'auto',
+    },
   },
   mocha: {
     timeout: 5000_000,
