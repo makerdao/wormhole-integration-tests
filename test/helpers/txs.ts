@@ -12,7 +12,7 @@ export async function waitForTx(tx: Promise<ContractTransaction>, _confirmations
 
 function chainIdToConfirmationsNeededForFinalization(chainId: number): number {
   const defaultWhenReorgsPossible = 3
-  const defaultForInstantFinality = 0
+  const defaultForInstantFinality = 1
 
   // covers mainnet and public testnets
   if (
@@ -20,12 +20,6 @@ function chainIdToConfirmationsNeededForFinalization(chainId: number): number {
     chainId === 42 // kovan
   ) {
     return defaultWhenReorgsPossible
-  } else if (chainId === 69 || chainId === 10) {
-    // optimism needs *some* delay
-    return 1
-  } else if (chainId === 421611) {
-    // arbitrum needs *some* delay
-    return 1
   } else {
     return defaultForInstantFinality
   }
