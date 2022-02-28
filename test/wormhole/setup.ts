@@ -115,7 +115,7 @@ export async function setupTest({
   const ilk: string = bytes32('WH_' + Buffer.from(randomBytes(14)).toString('hex'))
 
   const {
-    makerSdk: l1Sdk,
+    makerSdk,
     relayTxToL1,
     relayTxToL2,
     wormholeBridgeSdk,
@@ -139,7 +139,7 @@ export async function setupTest({
   })
 
   await configureWormhole({
-    makerSdk: l1Sdk,
+    makerSdk,
     wormholeSdk,
     joinDomain: masterDomain,
     defaultSigner: l1Signer,
@@ -152,7 +152,7 @@ export async function setupTest({
 
   await performSanityChecks(
     l1Signer,
-    l1Sdk,
+    makerSdk,
     wormholeSdk,
     baseBridgeSdk,
     wormholeBridgeSdk,
@@ -164,7 +164,7 @@ export async function setupTest({
   console.log('Setup complete.')
 
   return {
-    makerSdk: l1Sdk,
+    makerSdk,
     l1Signer,
     l1Provider,
     l1User,
