@@ -38,7 +38,7 @@ export default defineConfig({
       },
 
       optimismDaiBridge: {
-        l1Escrow: '0x467194771dAe2967Aef3ECbEDD3Bf9a310C76C65',
+        l1Escrow: '0x8FdA2c4323850F974C7Abf4B16eD129D45f9E2e2',
         l1GovernanceRelay: '0xAeFc25750d8C2bd331293076E2DC5d5ad414b4a2',
         l1DAITokenBridge: '0xb415e822C4983ecD6B1c1596e8a5f976cf6CD9e3',
       },

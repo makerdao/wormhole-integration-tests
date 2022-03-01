@@ -79,7 +79,7 @@ export async function relayMessages(
   for (const { message, proof } of messagePairs) {
     console.log('Relaying  L2 -> L1 message...')
     const tx = await waitForTx(
-      optimismRollupSdk.l1XDomainMessenger.relayMessage(
+      (optimismRollupSdk.l1XDomainMessenger.relayMessage as any)(
         message.target,
         message.sender,
         message.message,

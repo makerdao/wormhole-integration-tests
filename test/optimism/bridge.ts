@@ -48,6 +48,7 @@ export async function deployOptimismWormholeBridge(opts: OptimismWormholeBridgeD
     opts.wormholeSdk.router.address,
   ])
   expect(l1WormholeBridge.address).to.be.eq(futureL1WormholeBridgeAddress, 'Future address doesnt match actual address')
+  console.log('L1WormholeBridge deployed at: ', l1WormholeBridge.address)
 
   await waitForTx(l2WormholeBridge.rely(opts.baseBridgeSdk.l2GovRelay.address))
   await waitForTx(l2WormholeBridge.deny(await opts.l2Signer.getAddress()))
