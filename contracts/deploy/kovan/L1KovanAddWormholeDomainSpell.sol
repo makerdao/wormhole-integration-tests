@@ -77,8 +77,8 @@ interface GovernanceRelayLike {
 }
 
 contract L1KovanAddWormholeDomainSpell {
-  uint256 public constant RAD = 10**27;
-  uint256 public constant RAY = 10**45;
+  uint256 public constant RAY = 10**27;
+  uint256 public constant RAD = 10**45;
 
   function execute() external {
     bytes32 masterDomain = "KOVAN-MASTER-1";

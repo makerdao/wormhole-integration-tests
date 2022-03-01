@@ -55,7 +55,7 @@ async function main() {
     ),
   )
 
-  console.log('DAI before: ', formatEther(await kovanSdk.maker.dai.balanceOf(user)))
+  console.log('DAI after: ', formatEther(await kovanSdk.maker.dai.balanceOf(user)))
 }
 
 // this should be extracted to common library, arbitrum uses exactly same scheme
