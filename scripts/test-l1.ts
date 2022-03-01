@@ -19,7 +19,7 @@ import { L2DAIWormholeBridge__factory, WormholeOracleAuth__factory } from '../ty
 async function main() {
   const masterDomain = bytes32('KOVAN-MASTER-1')
   const user = '0x4BeE0574349BF0d8caB290dE4f38D38FEEEED91A'
-  // const l1Spell = '0x8EEd20d0F2C95eb636AB099A0bb318fA0134d523'
+  // const l1Spell = { address: '0xee19f1f877fd9428137b039510ca6e460f312b06' }
   const spellInterface = new Interface(['function execute()'])
 
   const signer = await impersonateAccount(user, hre.ethers.provider)
