@@ -1,44 +1,44 @@
-import { getKovanSdk, getOptimismKovanSdk } from '@dethcrypto/eth-sdk-client'
-import { getRequiredEnv } from '@makerdao/hardhat-utils'
-import { expect } from 'chai'
+import { getKovanSdk } from '@dethcrypto/eth-sdk-client'
+import { sleep } from '@eth-optimism/core-utils'
 import * as dotenv from 'dotenv'
-import { Contract, ethers, Wallet } from 'ethers'
-import { formatEther, Interface, parseUnits } from 'ethers/lib/utils'
+import { Contract } from 'ethers'
+import { formatEther, Interface } from 'ethers/lib/utils'
 import * as hre from 'hardhat'
-import { mapValues } from 'lodash'
-import { Dictionary } from 'ts-essentials'
+
 import { deployUsingFactoryAndVerify, getContractFactory, impersonateAccount, waitForTx } from '../test/helpers'
-import { executeSpell, getAttestations } from '../test/wormhole'
+
 dotenv.config()
 
-const bytes32 = hre.ethers.utils.formatBytes32String
+import { TransactionReceipt } from '@ethersproject/abstract-provider'
+import { JsonRpcProvider } from '@ethersproject/providers'
+import { Signer } from 'ethers'
 
-import { L2DAIWormholeBridge__factory, WormholeOracleAuth__factory } from '../typechain'
+import { WormholeOracleAuth__factory } from '../typechain'
 
 // note: before running this script you need to setup hardhat network to use with kovan network in fork mode
 async function main() {
-  const masterDomain = bytes32('KOVAN-MASTER-1')
-  const user = '0x4BeE0574349BF0d8caB290dE4f38D38FEEEED91A'
-  // const l1Spell = { address: '0xee19f1f877fd9428137b039510ca6e460f312b06' }
-  const spellInterface = new Interface(['function execute()'])
-
-  const signer = await impersonateAccount(user, hre.ethers.provider)
+  const userAddress = '0x4BeE0574349BF0d8caB290dE4f38D38FEEEED91A'
+  const signer = await impersonateAccount(userAddress, hre.ethers.provider)
+  const mkrWhaleAddress = '0xd200790f62c8da69973e61d4936cfE4f356ccD07'
   console.log('Network block number: ', await signer.provider!.getBlockNumber())
 
+  // const spellInterface = new Interface(['function cast()', 'function schedule()'])
+  // const l1Spell = new Contract('0x66b3d63621fdd5967603a824114da95cc3a35107', spellInterface)
   const SpellFactory = await hre.ethers.getContractFactory('L1KovanAddWormholeDomainSpell')
   const l1Spell = await deployUsingFactoryAndVerify(signer, SpellFactory, [])
   console.log('L1 spell deployed at: ', l1Spell.address)
 
   const kovanSdk = getKovanSdk(signer.provider! as any)
-  console.log('Executing L1 spell')
-  await executeSpell(signer, kovanSdk.maker, new Contract(l1Spell.address, spellInterface))
 
-  console.log('DAI before: ', formatEther(await kovanSdk.maker.dai.balanceOf(user)))
+  await executeDssSpell(signer, await kovanSdk.maker.pause_proxy.owner(), l1Spell, mkrWhaleAddress)
+
+  console.log('DAI before: ', formatEther(await kovanSdk.maker.dai.balanceOf(userAddress)))
 
   const oracleAuth = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', signer).attach(
     '0xcEBe310e86d44a55EC6Be05e0c233B033979BC67',
   )
-  const tx = await waitForTx(
+
+  await waitForTx(
     oracleAuth.requestMint(
       [
         '0x4b4f56414e2d534c4156452d4f5054494d49534d2d3100000000000000000000',
@@ -55,19 +55,33 @@ async function main() {
     ),
   )
 
-  console.log('DAI after: ', formatEther(await kovanSdk.maker.dai.balanceOf(user)))
+  console.log('DAI after: ', formatEther(await kovanSdk.maker.dai.balanceOf(userAddress)))
 }
 
-// this should be extracted to common library, arbitrum uses exactly same scheme
-function applyL1ToL2Alias(l1Address: string): string {
-  const mask = ethers.BigNumber.from(2).pow(160)
-  const offset = ethers.BigNumber.from('0x1111000000000000000000000000000000001111')
-
-  const l1AddressAsNumber = ethers.BigNumber.from(l1Address)
-
-  const l2AddressAsNumber = l1AddressAsNumber.add(offset)
-
-  return l2AddressAsNumber.mod(mask).toHexString()
+async function executeDssSpell(
+  l1Signer: Signer,
+  pauseAddress: string,
+  spell: Contract,
+  mkrWhaleAddress: string,
+): Promise<TransactionReceipt> {
+  // execute spell using standard DssSpell procedure
+  const mkrWhale = await impersonateAccount(mkrWhaleAddress, l1Signer.provider as JsonRpcProvider)
+  const pause = new Contract(pauseAddress, new Interface(['function authority() view returns (address)']), l1Signer)
+  const chief = new Contract(
+    await pause.authority(),
+    new Interface(['function vote(address[])', 'function lift(address)']),
+    mkrWhale,
+  )
+  console.log('Vote spell...')
+  await waitForTx(chief.vote([spell.address]))
+  console.log('Lift spell...')
+  await waitForTx(chief.lift(spell.address))
+  console.log('Scheduling spell...')
+  await waitForTx(spell.connect(l1Signer).schedule())
+  console.log('Waiting pause delay...')
+  await sleep(60000)
+  console.log('Casting spell...')
+  return await waitForTx(spell.connect(l1Signer).cast())
 }
 
 main()

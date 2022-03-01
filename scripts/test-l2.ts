@@ -1,12 +1,10 @@
-import { getKovanSdk, getOptimismKovanSdk } from '@dethcrypto/eth-sdk-client'
+import { getOptimismKovanSdk } from '@dethcrypto/eth-sdk-client'
 import { getRequiredEnv } from '@makerdao/hardhat-utils'
-import { expect } from 'chai'
 import * as dotenv from 'dotenv'
 import { ethers, Wallet } from 'ethers'
 import { formatEther, Interface, parseUnits } from 'ethers/lib/utils'
 import * as hre from 'hardhat'
-import { mapValues } from 'lodash'
-import { Dictionary } from 'ts-essentials'
+
 import { getContractFactory, impersonateAccount, waitForTx } from '../test/helpers'
 import { getAttestations } from '../test/wormhole'
 dotenv.config()
@@ -28,7 +26,6 @@ async function main() {
 
   const optimismKovanSdk = getOptimismKovanSdk(signer.provider! as any)
   const l2GovRelay = optimismKovanSdk.optimismDaiBridge.l2GovernanceRelay
-  const l1GovRelay = await l2GovRelay.l1GovernanceRelay()
 
   console.log('Executing L2 spell')
   const l1MessengerImpersonator = await impersonateAccount(
