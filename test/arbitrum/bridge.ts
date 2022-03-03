@@ -11,19 +11,20 @@ import {
   L2DaiGateway__factory,
   L2DaiWormholeGateway__factory,
 } from '../../typechain'
-import { ArbitrumAddresses, deployUsingFactory, getContractFactory, waitForTx } from '../helpers'
+import { deployUsingFactory, getContractFactory, waitForTx } from '../helpers'
 import { getAddressOfNextDeployedContract } from '../pe-utils/address'
 import { MakerSdk } from '../wormhole'
 import { WormholeSdk } from '../wormhole/wormhole'
+import { ArbitrumRollupSdk } from '.'
 
 interface ArbitrumWormholeBridgeDeployOpts {
   l1Signer: Signer
   l2Signer: Signer
   makerSdk: MakerSdk
-  arbitrumAddresses: ArbitrumAddresses
-  domain: string
+  arbitrumRollupSdk: ArbitrumRollupSdk
   wormholeSdk: WormholeSdk
   baseBridgeSdk: ArbitrumBaseBridgeSdk
+  slaveDomain: string
 }
 
 export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeDeployOpts) {
@@ -36,7 +37,7 @@ export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeD
   const l2WormholeBridge = await deployUsingFactory(opts.l2Signer, L2WormholeBridgeFactory, [
     opts.baseBridgeSdk.l2Dai.address,
     futureL1WormholeBridgeAddress,
-    opts.domain,
+    opts.slaveDomain,
   ])
   console.log('L2DaiWormholeGateway deployed at: ', l2WormholeBridge.address)
 
@@ -44,7 +45,7 @@ export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeD
   const l1WormholeBridge = await deployUsingFactory(opts.l1Signer, L1WormholeBridgeFactory, [
     opts.makerSdk.dai.address,
     l2WormholeBridge.address,
-    opts.arbitrumAddresses.l1.fake_inbox, // use a fake inbox that allows relaying arbitrary L2>L1 messages without delay
+    opts.arbitrumRollupSdk.fake_inbox.address, // use a fake inbox that allows relaying arbitrary L2>L1 messages without delay
     opts.baseBridgeSdk.l1Escrow.address,
     opts.wormholeSdk.router.address,
   ])
@@ -61,7 +62,7 @@ interface ArbitrumBaseBridgeDeployOpts {
   l1Signer: Signer
   l2Signer: Signer
   makerSdk: MakerSdk
-  arbitrumAddresses: ArbitrumAddresses
+  arbitrumRollupSdk: ArbitrumRollupSdk
 }
 
 export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpts) {
@@ -89,7 +90,7 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
     [
       l2DaiGateway.address,
       l1Router.address,
-      opts.arbitrumAddresses.l1.inbox,
+      opts.arbitrumRollupSdk.inbox.address,
       opts.makerSdk.dai.address,
       l2Dai.address,
       l1Escrow.address,
@@ -107,7 +108,7 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
   const l1GovRelay = await deployUsingFactory(
     opts.l1Signer,
     getContractFactory<L1ArbitrumGovernanceRelay__factory>('L1ArbitrumGovernanceRelay'),
-    [opts.arbitrumAddresses.l1.inbox, l2GovRelay.address],
+    [opts.arbitrumRollupSdk.inbox.address, l2GovRelay.address],
   )
   expect(l1GovRelay.address).to.be.eq(futureL1GovRelayAddress, 'Future address doesnt match actual address')
 

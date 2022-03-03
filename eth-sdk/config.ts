@@ -70,8 +70,23 @@ export default defineConfig({
         esm: '0x0000000000000000000000000000000000000000', // not deployed on rinkeby?
         dai: '0x17B729a6Ac1f265090cbb4AecBdd53E34664C00e',
       },
+      arbitrumDaiBridge: {
+        l1Escrow: '0x467194771dAe2967Aef3ECbEDD3Bf9a310C76C65',
+        l1GovernanceRelay: '0x09B354CDA89203BB7B3131CC728dFa06ab09Ae2F',
+        l1DaiGateway: '0x10E6593CDda8c58a1d0f14C5164B376352a55f2F',
+      },
       arbitrum: {
         fake_bridge: '0xc710c7eed1f6d29bc4251c1064f5b27824af72b8', // modified arbitrum bridge allowing arbitrary L2>L1 message passing without delay
+        inbox: '0x578BAde599406A8fE3d24Fd7f7211c0911F5B29e', // real inbox
+        fake_inbox: '0x0495dF1ed467FeeCe56D36866acb3348BE407b9D', // modified inbox allowing arbitrary L2>L1 message passing without delay
+      },
+    },
+
+    arbitrumTestnet: {
+      arbitrumDaiBridge: {
+        dai: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+        l2GovernanceRelay: '0x10E6593CDda8c58a1d0f14C5164B376352a55f2F',
+        l2DaiGateway: '0x467194771dAe2967Aef3ECbEDD3Bf9a310C76C65',
       },
     },
   },

@@ -83,14 +83,14 @@ contract DssSpellAction is DssAction {
   uint256 public constant RAY = 10**27;
   uint256 public constant RAD = 10**45;
 
-  string public constant override description = "Kovan Optimism Wormhole deployment spell";
+  string public constant override description = "Rinkeby Arbitrum Wormhole deployment spell";
 
   function officeHours() public pure override returns (bool) {
     return false;
   }
 
   function actions() public override {
-    bytes32 masterDomain = "KOVAN-MASTER-1";
+    bytes32 masterDomain = "RINKEBY-MASTER-1";
     WormholeJoinLike wormholeJoin = WormholeJoinLike(0x5B321180cC155a6fd38bc14a64205d1344317975);
     address vow = 0x0F4Cbe6CBA918b7488C26E29d9ECd7368F38EA3b;
     VatLike vat = VatLike(0xbA987bDB501d131f766fEe8180Da5d81b34b69d9);
@@ -115,7 +115,7 @@ contract DssSpellAction is DssAction {
     oracleAuth.addSigners(oracles);
 
     // configure optimism wormhole
-    bytes32 slaveDomain = "KOVAN-SLAVE-OPTIMISM-1";
+    bytes32 slaveDomain = "RINKEBY-SLAVE-ARBITRUM-1";
     uint256 optimismSlaveLine = 100 * RAD;
     address constantFees = 0x2aE3853F2B7a410e2789D7Dd38D42FC63eB982e5;
     address slaveDomainBridge = 0x646231dFDAF583E2eB77FEdc47433C30519FF448;
@@ -134,6 +134,6 @@ contract DssSpellAction is DssAction {
   }
 }
 
-contract L1KovanAddWormholeDomainSpell is DssExec {
+contract L1RinkebyAddWormholeDomainSpell is DssExec {
   constructor() DssExec(block.timestamp + 30 days, address(new DssSpellAction())) {}
 }

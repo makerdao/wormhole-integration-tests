@@ -2,14 +2,7 @@ import { getMainnetSdk } from '@dethcrypto/eth-sdk-client'
 import { JsonRpcProvider } from '@ethersproject/providers'
 
 import { L1AddWormholeOptimismSpell__factory, L2AddWormholeDomainSpell__factory } from '../../typechain'
-import {
-  deployUsingFactory,
-  forwardTime,
-  getContractFactory,
-  getDynamicOptimismRollupSdk,
-  mintEther,
-  toEthersBigNumber,
-} from '../helpers'
+import { deployUsingFactory, forwardTime, getContractFactory, mintEther, toEthersBigNumber } from '../helpers'
 import {
   deployWormhole,
   DomainSetupOpts,
@@ -17,6 +10,7 @@ import {
   mintDai,
   OPTIMISTIC_ROLLUP_FLUSH_FINALIZATION_TIME,
 } from '../wormhole'
+import { getDynamicOptimismRollupSdk } from '.'
 import {
   defaultL2Data,
   defaultL2Gas,

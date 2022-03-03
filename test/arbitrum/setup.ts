@@ -12,7 +12,6 @@ import {
   deployArbitrumBaseBridge,
   deployArbitrumWormholeBridge,
   depositToStandardBridge,
-  getArbitrumAddresses,
   makeRelayTxToL1,
   waitToRelayTxsToL2,
 } from './index'
@@ -34,8 +33,7 @@ export async function setupArbitrumTests({
 }: DomainSetupOpts): Promise<DomainSetupResult> {
   const l1Sdk = getRinkebySdk(l1Signer)
   const makerSdk = l1Sdk.maker
-  const arbitrumSdk = l1Sdk.arbitrum
-  const arbitrumAddresses = getArbitrumAddresses()
+  const arbitrumRollupSdk = l1Sdk.arbitrum
 
   const userEthAmount = ethers.utils.parseEther('0.1')
   if ((await l1User.getBalance()).lt(userEthAmount)) {
@@ -64,7 +62,7 @@ export async function setupArbitrumTests({
     l1Signer,
     l2Signer,
     makerSdk,
-    arbitrumAddresses,
+    arbitrumRollupSdk,
   })
   const wormholeBridgeSdk = await deployArbitrumWormholeBridge({
     makerSdk,
@@ -72,14 +70,14 @@ export async function setupArbitrumTests({
     l2Signer,
     wormholeSdk,
     baseBridgeSdk,
-    domain,
-    arbitrumAddresses,
+    slaveDomain: domain,
+    arbitrumRollupSdk,
   })
 
-  const relayTxToL1 = makeRelayTxToL1(wormholeBridgeSdk.l2WormholeBridge, arbitrumSdk, l1Signer)
+  const relayTxToL1 = makeRelayTxToL1(wormholeBridgeSdk.l2WormholeBridge, arbitrumRollupSdk, l1Signer)
   const relayTxToL2 = (
     l1Tx: Promise<ContractTransaction> | ContractTransaction | Promise<ContractReceipt> | ContractReceipt,
-  ) => waitToRelayTxsToL2(l1Tx, arbitrumAddresses.l1.inbox, l1Provider, l2Provider)
+  ) => waitToRelayTxsToL2(l1Tx, arbitrumRollupSdk.inbox.address, l1Provider, l2Provider)
 
   console.log('Deploy Arbitrum L2 spell...')
   const l2AddWormholeDomainSpell = await deployUsingFactory(

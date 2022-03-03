@@ -12,10 +12,11 @@ import {
   L2OptimismGovernanceRelay__factory,
 } from '../../typechain'
 import { deployUsingFactoryAndVerify, getContractFactory, mintEther } from '../helpers'
-import { OptimismRollupSdk, waitForTx } from '../helpers'
+import { waitForTx } from '../helpers'
 import { getAddressOfNextDeployedContract } from '../pe-utils/address'
 import { MakerSdk } from '../wormhole'
 import { WormholeSdk } from '../wormhole/wormhole'
+import { OptimismRollupSdk } from '.'
 
 interface OptimismWormholeBridgeDeployOpts {
   l1Signer: Signer
