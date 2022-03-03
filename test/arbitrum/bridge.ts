@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { constants, Signer, Wallet } from 'ethers'
+import { constants, Signer } from 'ethers'
 
 import {
   Dai__factory,
