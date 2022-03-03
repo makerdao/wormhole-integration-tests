@@ -124,12 +124,17 @@ export async function deployOptimismBaseBridge(opts: OptimismBaseBridgeDeployOpt
   // bridge has to be approved on escrow because settling moves tokens
   await waitForTx(l1Escrow.approve(opts.makerSdk.dai.address, l1DaiTokenBridge.address, constants.MaxUint256))
   await waitForTx(l1Escrow.rely(opts.makerSdk.pause_proxy.address))
+  await waitForTx(l1Escrow.deny(await opts.l1Signer.getAddress()))
 
   await waitForTx(l1GovRelay.rely(opts.makerSdk.pause_proxy.address))
   await waitForTx(l1GovRelay.deny(await opts.l1Signer.getAddress()))
 
+  await waitForTx(l2Dai.rely(l2DaiTokenBridge.address))
   await waitForTx(l2Dai.rely(l2GovRelay.address))
   await waitForTx(l2Dai.deny(await opts.l2Signer.getAddress()))
+
+  await waitForTx(l1DaiTokenBridge.rely(opts.makerSdk.pause_proxy.address))
+  await waitForTx(l1DaiTokenBridge.deny(await opts.l1Signer.getAddress()))
 
   await waitForTx(l2DaiTokenBridge.rely(l2GovRelay.address))
   await waitForTx(l2DaiTokenBridge.deny(await opts.l2Signer.getAddress()))

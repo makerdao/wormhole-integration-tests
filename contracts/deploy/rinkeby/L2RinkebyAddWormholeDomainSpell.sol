@@ -30,9 +30,9 @@ interface WormholeBridgeLike {
 
 contract L2RinkebyAddWormholeDomainSpell {
   function execute() external {
-    DaiLike dai = DaiLike(0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1);
+    DaiLike dai = DaiLike(0x78e59654Bc33dBbFf9FfF83703743566B1a0eA15);
     WormholeBridgeLike wormholeBridge = WormholeBridgeLike(
-      0x45440Ae4988965A4cD94651E715fC9A04e62Fb41
+      0xEbA80E9d7C6C2F575a642a43199e32F47Bbd1306
     );
     bytes32 masterDomain = "RINKEBY-MASTER-1";
 

@@ -63,17 +63,18 @@ export default defineConfig({
 
     rinkeby: {
       maker: {
+        // bespoke "light" MCD deployment where the pause_proxy is owned by the deployer EOA
         vat: '0x66b3D63621FDD5967603A824114Da95cc3A35107',
         dai_join: '0x6a4017c221335db1eD44C89C3d12841924EeCB79',
         vow: '0xD9dFdf1f1604eF572EFd9c8c2e5c6DDca659150A',
         pause_proxy: '0x4463830546A8cFcFa1b6Eb660Df17A29a4F4e06F',
-        esm: '0x0000000000000000000000000000000000000000', // not deployed on rinkeby?
+        esm: '0x0000000000000000000000000000000000000000',
         dai: '0x17B729a6Ac1f265090cbb4AecBdd53E34664C00e',
       },
       arbitrumDaiBridge: {
-        l1Escrow: '0x467194771dAe2967Aef3ECbEDD3Bf9a310C76C65',
-        l1GovernanceRelay: '0x09B354CDA89203BB7B3131CC728dFa06ab09Ae2F',
-        l1DaiGateway: '0x10E6593CDda8c58a1d0f14C5164B376352a55f2F',
+        l1Escrow: '0x3128d6ffeB4CdD14dC47E4e6A70022F4bf8E7751',
+        l1GovernanceRelay: '0x97057eF24d3C69D974Cc5348145b7258c5a503B6',
+        l1DaiGateway: '0xb1cfD43BD287B2E94bf00140091A9Cca47f462cC',
       },
       arbitrum: {
         fake_bridge: '0xc710c7eed1f6d29bc4251c1064f5b27824af72b8', // modified arbitrum bridge allowing arbitrary L2>L1 message passing without delay
@@ -84,9 +85,9 @@ export default defineConfig({
 
     arbitrumTestnet: {
       arbitrumDaiBridge: {
-        dai: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
-        l2GovernanceRelay: '0x10E6593CDda8c58a1d0f14C5164B376352a55f2F',
-        l2DaiGateway: '0x467194771dAe2967Aef3ECbEDD3Bf9a310C76C65',
+        dai: '0x78e59654bc33dbbff9fff83703743566b1a0ea15',
+        l2GovernanceRelay: '0x10039313055c5803D1820FEF2720ecC1Ff2F02f6',
+        l2DaiGateway: '0x7DC1e34e97c990f2B7d46777a47Fa47D069A8825',
       },
     },
   },
