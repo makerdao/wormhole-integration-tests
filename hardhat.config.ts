@@ -1,9 +1,9 @@
-import * as dotenv from 'dotenv'
-
-import { HardhatUserConfig } from 'hardhat/config'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import '@nomiclabs/hardhat-etherscan'
+
+import * as dotenv from 'dotenv'
+import { HardhatUserConfig } from 'hardhat/config'
 
 dotenv.config()
 

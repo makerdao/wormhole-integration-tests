@@ -5,13 +5,13 @@ import { ethers, Wallet } from 'ethers'
 import { formatEther, Interface, parseUnits } from 'ethers/lib/utils'
 import * as hre from 'hardhat'
 
-import { getContractFactory, impersonateAccount, waitForTx } from '../test/helpers'
-import { getAttestations } from '../test/wormhole'
+import { getContractFactory, impersonateAccount, waitForTx } from '../../test/helpers'
+import { getAttestations } from '../../test/wormhole'
 dotenv.config()
 
 const bytes32 = hre.ethers.utils.formatBytes32String
 
-import { L2DAIWormholeBridge__factory } from '../typechain'
+import { L2DAIWormholeBridge__factory } from '../../typechain'
 
 // note: before running this script you need to setup hardhat network to use with optimistic-kovan network in fork mode
 async function main() {

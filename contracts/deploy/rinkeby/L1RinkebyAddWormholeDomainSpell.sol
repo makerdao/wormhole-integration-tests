@@ -75,13 +75,21 @@ interface GovernanceRelayLike {
   function relay(
     address target,
     bytes calldata targetData,
-    uint32 l2gas
+    uint256 l1CallValue,
+    uint256 maxGas,
+    uint256 gasPriceBid,
+    uint256 maxSubmissionCost
   ) external;
 }
 
 contract DssSpellAction is DssAction {
   uint256 public constant RAY = 10**27;
   uint256 public constant RAD = 10**45;
+
+  uint256 public constant l1CallValue = 1922700645232;
+  uint256 public constant maxGas = 139212;
+  uint256 public constant gasPriceBid = 13751501;
+  uint256 public constant maxSubmissionCost = 8326688020;
 
   string public constant override description = "Rinkeby Arbitrum Wormhole deployment spell";
 
@@ -124,16 +132,30 @@ contract DssSpellAction is DssAction {
     GovernanceRelayLike l1GovRelay = GovernanceRelayLike(
       0x97057eF24d3C69D974Cc5348145b7258c5a503B6
     );
-    address l2ConfigureDomainSpell = 0xD7B700Bf6Aaf1E223C745C4217bd29d454FD9F26;
+    address l2ConfigureDomainSpell = 0xF4635D1590e0eA3F1D22F1F75E1C85B634b6F162;
 
     router.file(bytes32("gateway"), slaveDomain, slaveDomainBridge);
     wormholeJoin.file(bytes32("fees"), slaveDomain, constantFees);
     wormholeJoin.file(bytes32("line"), slaveDomain, optimismSlaveLine);
     escrow.approve(dai, slaveDomainBridge, type(uint256).max);
-    l1GovRelay.relay(l2ConfigureDomainSpell, abi.encodeWithSignature("execute()"), 3_000_000);
+
+    l1GovRelay.relay(
+      l2ConfigureDomainSpell,
+      abi.encodeWithSignature("execute()"),
+      l1CallValue,
+      maxGas,
+      gasPriceBid,
+      maxSubmissionCost
+    );
   }
 }
 
 contract L1RinkebyAddWormholeDomainSpell is DssExec {
+  // hack allowing execution of spell without full MCD deployment
+  function execute() external {
+    (bool success, ) = address(action).delegatecall(abi.encodeWithSignature("actions()"));
+    require(success, "L1RinkebyAddWormholeDomainSpell/delegatecall-failed");
+  }
+
   constructor() DssExec(block.timestamp + 30 days, address(new DssSpellAction())) {}
 }

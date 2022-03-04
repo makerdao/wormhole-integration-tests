@@ -5,7 +5,7 @@ import { Contract } from 'ethers'
 import { formatEther, Interface } from 'ethers/lib/utils'
 import * as hre from 'hardhat'
 
-import { deployUsingFactoryAndVerify, getContractFactory, impersonateAccount, waitForTx } from '../test/helpers'
+import { deployUsingFactoryAndVerify, getContractFactory, impersonateAccount, waitForTx } from '../../test/helpers'
 
 dotenv.config()
 
@@ -13,7 +13,7 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { Signer } from 'ethers'
 
-import { WormholeOracleAuth__factory } from '../typechain'
+import { WormholeOracleAuth__factory } from '../../typechain'
 
 // note: before running this script you need to setup hardhat network to use with kovan network in fork mode
 async function main() {
