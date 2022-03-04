@@ -19,17 +19,17 @@ const config: HardhatUserConfig = {
       gas: 'auto',
     },
     kovan: {
-      url: process.env.KOVAN_OPTIMISM_L1_RPC,
+      url: process.env.KOVAN_OPTIMISM_L1_RPC || '',
     },
     rinkeby: {
-      url: process.env.RINKEBY_ARBITRUM_L1_RPC,
+      url: process.env.RINKEBY_ARBITRUM_L1_RPC || '',
     },
   },
   mocha: {
     timeout: 5000_000,
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_KEY,
+    apiKey: process.env.ETHERSCAN_KEY || '',
   },
 }
 
