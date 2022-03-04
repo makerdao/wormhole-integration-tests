@@ -34,14 +34,14 @@ jobs:
           name: maker
           extraPullNames: dapp
 
-      - name: Cache Yarn dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-            node_modules
-            */*/node_modules
-          key: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-
+      # - name: Cache Yarn dependencies
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: |
+      #       node_modules
+      #       */*/node_modules
+      #     key: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-${{ hashFiles('**/yarn.lock') }}
+      #     restore-keys: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-
       - run: nix-shell --run 'bash ./scripts/setup.sh'
 
       - run: yarn lint

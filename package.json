@@ -20,7 +20,7 @@
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@types/lodash": "^4.14.178",
-    "hardhat": "2.7.0",
+    "hardhat": "2.9.0",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
