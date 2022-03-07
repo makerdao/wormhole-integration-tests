@@ -37,10 +37,10 @@ jobs:
       - name: Create env file
         run: |
           touch .env
-          echo ARBITRUM_L1_RPC_URL="${{ secrets.ARBITRUM_L1_RPC_URL }}" >> .env
-          echo ARBITRUM_L2_RPC_URL="https://rinkeby.arbitrum.io/rpc" >> .env
-          echo OPTIMISM_L1_RPC_URL="http://127.0.0.1:9545" >> .env
-          echo OPTIMISM_L2_RPC_URL="http://127.0.0.1:8545" >> .env
+          echo TEST_ARBITRUM_L1_RPC_URL="${{ secrets.ARBITRUM_L1_RPC_URL }}" >> .env
+          echo TEST_ARBITRUM_L2_RPC_URL="https://rinkeby.arbitrum.io/rpc" >> .env
+          echo TEST_OPTIMISM_L1_RPC_URL="http://127.0.0.1:9545" >> .env
+          echo TEST_OPTIMISM_L2_RPC_URL="http://127.0.0.1:8545" >> .env
           echo DEPLOYER_PRIV_KEY="${{ secrets.DEPLOYER_PRIV_KEY }}" >> .env
           echo USER_PRIV_KEY="${{ secrets.USER_PRIV_KEY }}" >> .env
 

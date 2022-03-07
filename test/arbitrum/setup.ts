@@ -1,11 +1,13 @@
 import { getRinkebySdk } from '@dethcrypto/eth-sdk-client'
 import { sleep } from '@eth-optimism/core-utils'
-import { ContractReceipt, ContractTransaction } from 'ethers'
+import { getOptionalEnv, getRequiredEnv } from '@makerdao/hardhat-utils'
+import { ContractReceipt, ContractTransaction, Wallet } from 'ethers'
 import { formatEther } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 
 import { L1AddWormholeArbitrumSpell__factory, L2AddWormholeDomainSpell__factory } from '../../typechain'
 import { deployUsingFactory, getContractFactory, waitForTx } from '../helpers'
+import { RetryProvider } from '../helpers/RetryProvider'
 import { deployWormhole, DomainSetupOpts, DomainSetupResult } from '../wormhole'
 import { getGasPriceBid, getMaxGas, getMaxSubmissionPrice } from './deposit'
 import {
@@ -19,11 +21,6 @@ import {
 const TTL = 300
 
 export async function setupArbitrumTests({
-  l1Signer,
-  l2Signer,
-  l1User,
-  l1Provider,
-  l2Provider,
   l2DaiAmount,
   domain,
   masterDomain,
@@ -31,6 +28,26 @@ export async function setupArbitrumTests({
   fee,
   line,
 }: DomainSetupOpts): Promise<DomainSetupResult> {
+  const l1Rpc = getRequiredEnv(`TEST_ARBITRUM_L1_RPC_URL`)
+  const l2Rpc = getRequiredEnv(`TEST_ARBITRUM_L2_RPC_URL`)
+
+  const pkey = getRequiredEnv('DEPLOYER_PRIV_KEY')
+  const pkey2 = getOptionalEnv('USER_PRIV_KEY')
+
+  const l1Provider = new ethers.providers.JsonRpcProvider(l1Rpc)
+  const l2Provider = new RetryProvider(5, l2Rpc)
+  const l1StartingBlock = await l1Provider.getBlockNumber()
+  const l2StartingBlock = await l2Provider.getBlockNumber()
+  console.log('Current L1 block: ', l1StartingBlock)
+  console.log('Current L2 block: ', l2StartingBlock)
+
+  const l1Signer = new ethers.Wallet(pkey, l1Provider)
+  const l2Signer = new ethers.Wallet(pkey, l2Provider)
+  const l1User = pkey2 ? new ethers.Wallet(pkey2, l1Provider) : Wallet.createRandom().connect(l1Provider)
+  const l2User = l1User.connect(l2Provider)
+  console.log('l1Signer:', l1Signer.address)
+  console.log('l1User:', l1User.address)
+
   const l1Sdk = getRinkebySdk(l1Signer)
   const makerSdk = l1Sdk.maker
   const arbitrumRollupSdk = l1Sdk.arbitrum
@@ -148,6 +165,14 @@ export async function setupArbitrumTests({
   )
   console.log('Arbitrum setup complete.')
   return {
+    l1Signer,
+    l2Signer,
+    l1User,
+    l2User,
+    l1Provider,
+    l2Provider,
+    l1StartingBlock,
+    l2StartingBlock,
     makerSdk,
     relayTxToL1,
     relayTxToL2,
