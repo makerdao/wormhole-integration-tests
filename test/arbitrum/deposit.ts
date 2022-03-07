@@ -1,18 +1,16 @@
+import { Provider } from '@ethersproject/providers'
 import { BigNumber, ethers, Wallet } from 'ethers'
 import { defaultAbiCoder } from 'ethers/lib/utils'
 
-import { L1DaiGateway } from '../../typechain'
+import { ArbitrumL1DaiGateway } from '../../typechain'
 import { waitForTx } from '../helpers/txs'
 import { getArbitrumCoreContracts } from './contracts'
 
-export async function getGasPriceBid(l2: ethers.providers.BaseProvider): Promise<BigNumber> {
+export async function getGasPriceBid(l2: Provider): Promise<BigNumber> {
   return await l2.getGasPrice()
 }
 
-export async function getMaxSubmissionPrice(
-  l2: ethers.providers.BaseProvider,
-  calldataOrCalldataLength: string | number,
-) {
+export async function getMaxSubmissionPrice(l2: Provider, calldataOrCalldataLength: string | number) {
   const calldataLength =
     typeof calldataOrCalldataLength === 'string' ? calldataOrCalldataLength.length : calldataOrCalldataLength
   const [submissionPrice] = await getArbitrumCoreContracts(l2).arbRetryableTx.getSubmissionPrice(calldataLength)
@@ -21,7 +19,7 @@ export async function getMaxSubmissionPrice(
 }
 
 export async function getMaxGas(
-  l2: ethers.providers.BaseProvider,
+  l2: Provider,
   sender: string,
   destination: string,
   refundDestination: string,
@@ -59,7 +57,7 @@ export async function depositToStandardBridge({
   to: string
   l2Provider: ethers.providers.BaseProvider
   deposit: BigNumber | string
-  l1Gateway: L1DaiGateway
+  l1Gateway: ArbitrumL1DaiGateway
   l1TokenAddress: string
   l2GatewayAddress: string
 }) {

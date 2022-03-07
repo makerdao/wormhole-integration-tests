@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { BigNumber, ContractReceipt, ContractTransaction, ethers, providers, Signer, utils } from 'ethers'
 
-import { L2CrossDomainEnabled } from '../../typechain'
+import { L2WormholeBridgeLike } from '../wormhole'
 import { ArbitrumSdk } from '.'
 
 export async function waitToRelayTxsToL2(
@@ -92,7 +92,7 @@ function calculateL2RetryableTransactionHash(requestID: string) {
 }
 
 export function makeRelayTxToL1(
-  l2CrossDomainEnabled: L2CrossDomainEnabled,
+  l2CrossDomainEnabled: L2WormholeBridgeLike,
   arbitrumSdk: ArbitrumSdk,
   l1Signer: Signer,
 ) {
@@ -101,7 +101,7 @@ export function makeRelayTxToL1(
 }
 
 async function waitToRelayTxToL1(
-  l2CrossDomainEnabled: L2CrossDomainEnabled,
+  l2CrossDomainEnabled: L2WormholeBridgeLike,
   arbitrumSdk: ArbitrumSdk,
   l1Signer: Signer,
   l2OriginatingTx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt,

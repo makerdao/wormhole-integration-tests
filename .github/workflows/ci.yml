@@ -34,6 +34,16 @@ jobs:
           name: maker
           extraPullNames: dapp
 
+      - name: Create env file
+        run: |
+          touch .env
+          echo TEST_ARBITRUM_L1_RPC_URL="${{ secrets.ARBITRUM_L1_RPC_URL }}" >> .env
+          echo TEST_ARBITRUM_L2_RPC_URL="https://rinkeby.arbitrum.io/rpc" >> .env
+          echo TEST_OPTIMISM_L1_RPC_URL="http://127.0.0.1:9545" >> .env
+          echo TEST_OPTIMISM_L2_RPC_URL="http://127.0.0.1:8545" >> .env
+          echo DEPLOYER_PRIV_KEY="${{ secrets.DEPLOYER_PRIV_KEY }}" >> .env
+          echo USER_PRIV_KEY="${{ secrets.USER_PRIV_KEY }}" >> .env
+
       - name: Cache Yarn dependencies
         uses: actions/cache@v2
         with:
@@ -42,27 +52,17 @@ jobs:
             */*/node_modules
           key: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-${{ hashFiles('**/yarn.lock') }}
           restore-keys: ${{ runner.OS }}-${{ matrix.node }}-yarn-cache-
+      - run: yarn
       - run: nix-shell --run 'bash ./scripts/setup.sh'
 
       - run: yarn lint
       - run: yarn format
       - run: yarn build
 
-      - run: yarn
       - run: ./scripts/build-infra.sh
       - run: ./scripts/run-infra.sh&
       - run: yarn ts-node ./scripts/ensure-infra-up.ts
       - run: sleep 60 # give it some time to initialize
-
-      - name: Create env file
-        run: |
-          touch .env
-          echo ARBITRUM_L1_RPC_URL="${{ secrets.ARBITRUM_L1_RPC_URL }}" >> .env
-          echo ARBITRUM_L2_RPC_URL="https://rinkeby.arbitrum.io/rpc" >> .env
-          echo OPTIMISM_L1_RPC_URL="http://127.0.0.1:9545" >> .env
-          echo OPTIMISM_L2_RPC_URL="http://127.0.0.1:8545" >> .env
-          echo DEPLOYER_PRIV_KEY="${{ secrets.DEPLOYER_PRIV_KEY }}" >> .env
-          echo USER_PRIV_KEY="${{ secrets.USER_PRIV_KEY }}" >> .env
 
       - run: yarn test:optimism
       - run: yarn test:arbitrum # todo: run in parallel

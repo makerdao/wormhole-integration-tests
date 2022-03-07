@@ -1,15 +1,14 @@
 import { BigNumberish, ContractReceipt, Signer, Wallet } from 'ethers'
-import { arrayify, hexConcat, hexZeroPad, keccak256, splitSignature } from 'ethers/lib/utils'
+import { arrayify, hexConcat, hexZeroPad, Interface, keccak256, splitSignature } from 'ethers/lib/utils'
 
 import { BasicRelay } from '../../typechain'
-import { L2DAIWormholeBridgeInterface } from '../../typechain/L2DAIWormholeBridge'
 import { toEthersBigNumber, waitForTx } from '../helpers'
 import { getAttestations } from './attestations'
 
 interface CallRelayOpt {
   relay: BasicRelay
   txReceipt: ContractReceipt
-  l2WormholeBridgeInterface: L2DAIWormholeBridgeInterface
+  l2WormholeBridgeInterface: Interface
   l1Signer: Signer
   receiver: Signer
   oracleWallets: Wallet[]
