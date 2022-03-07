@@ -38,10 +38,10 @@ async function main() {
 
   const baseBridgeSdk: OptimismBaseBridgeSdk = {
     l1Escrow: kovanSdk.optimismDaiBridge.l1Escrow,
-    l1GovRelay: kovanSdk.optimismDaiBridge.l1GovernanceRelay as any, // @todo: due to a problem in eth-sdk daiBridge.l1GovernanceRelay has L1ArbitrumGovernanceRelay type...
+    l1GovRelay: kovanSdk.optimismDaiBridge.l1GovernanceRelay as any, // @todo: due to a problem in eth-sdk daiBridge.l1GovernanceRelay has ArbitrumL1GovernanceRelay type...
     l1DaiTokenBridge: kovanSdk.optimismDaiBridge.l1DAITokenBridge,
     l2Dai: optimismKovanSdk.optimismDaiBridge.dai as any, // @todo: due to a problem in eth-sdk daiBridge.dai has l1Dai type...
-    l2GovRelay: optimismKovanSdk.optimismDaiBridge.l2GovernanceRelay,
+    l2GovRelay: optimismKovanSdk.optimismDaiBridge.l2GovernanceRelay as any,
     l2DaiTokenBridge: optimismKovanSdk.optimismDaiBridge.l2DAITokenBridge,
   }
 

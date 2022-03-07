@@ -4,25 +4,19 @@ import { Wallet } from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 
-import {
-  BasicRelay,
-  BasicRelay__factory,
-  Dai,
-  L1Escrow,
-  L2DAIWormholeBridge,
-  WormholeJoin,
-  WormholeOracleAuth,
-  WormholeRouter,
-} from '../typechain'
+import { BasicRelay, BasicRelay__factory, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../typechain'
 import { deployUsingFactory, getContractFactory, toEthersBigNumber, toRad, toRay, toWad, waitForTx } from './helpers'
 import {
   callBasicRelay,
+  DaiLike,
   deployFileJoinFeesSpell,
   deployFileJoinLineSpell,
   deployPushBadDebtSpell,
   DomainSetupFunction,
   ForwardTimeFunction,
   getAttestations,
+  L1EscrowLike,
+  L2WormholeBridgeLike,
   MakerSdk,
   RelayTxToL1Function,
   setupTest,
@@ -46,13 +40,13 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
     let userAddress: string // both l1 and l2 user should have the same address
     let ilk: string
     let l1Signer: Wallet
-    let l2WormholeBridge: L2DAIWormholeBridge
+    let l2WormholeBridge: L2WormholeBridgeLike
     let oracleAuth: WormholeOracleAuth
     let join: WormholeJoin
     let router: WormholeRouter
-    let l2Dai: Dai
+    let l2Dai: DaiLike
     let makerSdk: MakerSdk
-    let l1Escrow: L1Escrow
+    let l1Escrow: L1EscrowLike
     let ttl: number
     let forwardTimeToAfterFinalization: ForwardTimeFunction
 

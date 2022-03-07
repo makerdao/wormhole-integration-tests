@@ -5,17 +5,9 @@ import { getOptionalEnv, getRequiredEnv } from '@makerdao/hardhat-utils'
 import { BigNumber, BigNumberish, Contract, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
-import {
-  BasicRelay,
-  Dai,
-  L1Escrow,
-  WormholeConstantFee,
-  WormholeJoin,
-  WormholeOracleAuth,
-  WormholeRouter,
-} from '../../typechain'
+import { BasicRelay, WormholeConstantFee, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../../typechain'
 import { RetryProvider } from '../helpers/RetryProvider'
-import { BaseBridgeSdk, WormholeBridgeSdk } from './bridge'
+import { BaseBridgeSdk, DaiLike, L1EscrowLike, WormholeBridgeSdk } from '.'
 import { performSanityChecks } from './checks'
 import { RelayTxToL1Function, RelayTxToL2Function } from './messages'
 import { configureWormhole, WormholeSdk } from './wormhole'
@@ -76,8 +68,8 @@ interface SetupTestResult {
   router: WormholeRouter
   constantFee: WormholeConstantFee
   relay: BasicRelay
-  l2Dai: Dai
-  l1Escrow: L1Escrow
+  l2Dai: DaiLike
+  l1Escrow: L1EscrowLike
   l2WormholeBridge: any
   relayTxToL1: RelayTxToL1Function
   makerSdk: MakerSdk

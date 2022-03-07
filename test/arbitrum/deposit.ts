@@ -2,7 +2,7 @@ import { Provider } from '@ethersproject/providers'
 import { BigNumber, ethers, Wallet } from 'ethers'
 import { defaultAbiCoder } from 'ethers/lib/utils'
 
-import { L1DaiGateway } from '../../typechain'
+import { ArbitrumL1DaiGateway } from '../../typechain'
 import { waitForTx } from '../helpers/txs'
 import { getArbitrumCoreContracts } from './contracts'
 
@@ -57,7 +57,7 @@ export async function depositToStandardBridge({
   to: string
   l2Provider: ethers.providers.BaseProvider
   deposit: BigNumber | string
-  l1Gateway: L1DaiGateway
+  l1Gateway: ArbitrumL1DaiGateway
   l1TokenAddress: string
   l2GatewayAddress: string
 }) {

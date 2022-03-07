@@ -11,7 +11,7 @@ dotenv.config()
 
 const bytes32 = hre.ethers.utils.formatBytes32String
 
-import { L2DAIWormholeBridge__factory } from '../../typechain'
+import { OptimismL2DAIWormholeBridge__factory } from '../../typechain'
 
 // note: before running this script you need to setup hardhat network to use with optimistic-kovan network in fork mode
 async function main() {
@@ -44,9 +44,10 @@ async function main() {
 
   console.log('DAI before: ', formatEther(await optimismKovanSdk.optimismDaiBridge.dai.balanceOf(user)))
 
-  const l2WormholeBridge = getContractFactory<L2DAIWormholeBridge__factory>('L2DAIWormholeBridge', signer).attach(
-    '0x45440Ae4988965A4cD94651E715fC9A04e62Fb41',
-  )
+  const l2WormholeBridge = getContractFactory<OptimismL2DAIWormholeBridge__factory>(
+    'OptimismL2DAIWormholeBridge',
+    signer,
+  ).attach('0x45440Ae4988965A4cD94651E715fC9A04e62Fb41')
   const tx = await waitForTx(
     l2WormholeBridge['initiateWormhole(bytes32,address,uint128)'](
       masterDomain,

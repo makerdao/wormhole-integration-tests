@@ -12,7 +12,7 @@ import { mapValues } from 'lodash'
 import { getGasPriceBid, getMaxGas, getMaxSubmissionPrice } from '../../test/arbitrum'
 import { deployUsingFactoryAndVerify, getContractFactory, waitForTx } from '../../test/helpers'
 import { executeSpell, getAttestations, MakerSdk } from '../../test/wormhole'
-import { L2DAIWormholeBridge__factory, WormholeOracleAuth__factory } from '../../typechain'
+import { ArbitrumL2DAIWormholeBridge__factory, WormholeOracleAuth__factory } from '../../typechain'
 
 const bytes32 = ethers.utils.formatBytes32String
 const masterDomain = 'RINKEBY-MASTER-1'
@@ -53,9 +53,10 @@ async function main() {
   const oracleAuth = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', receiver).attach(
     '0x7FD07147305f7eCcA62d0a7737bbE0Bd8AC5359b',
   )
-  const l2Bridge = getContractFactory<L2DAIWormholeBridge__factory>('L2DAIWormholeBridge', l2Signer).attach(
-    '0xEbA80E9d7C6C2F575a642a43199e32F47Bbd1306',
-  )
+  const l2Bridge = getContractFactory<ArbitrumL2DAIWormholeBridge__factory>(
+    'ArbitrumL2DAIWormholeBridge',
+    l2Signer,
+  ).attach('0xEbA80E9d7C6C2F575a642a43199e32F47Bbd1306')
 
   console.log('initiateWormhole...')
   const txR = await waitForTx(

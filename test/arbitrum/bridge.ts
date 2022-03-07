@@ -2,14 +2,14 @@ import { expect } from 'chai'
 import { constants, Signer } from 'ethers'
 
 import {
-  Dai__factory,
-  L1ArbitrumGovernanceRelay__factory,
-  L1DaiGateway__factory,
-  L1DaiWormholeGateway__factory,
-  L1Escrow__factory,
-  L2ArbitrumGovernanceRelay__factory,
-  L2DaiGateway__factory,
-  L2DaiWormholeGateway__factory,
+  ArbitrumDai__factory,
+  ArbitrumL1DaiGateway__factory,
+  ArbitrumL1DaiWormholeGateway__factory,
+  ArbitrumL1Escrow__factory,
+  ArbitrumL1GovernanceRelay__factory,
+  ArbitrumL2DaiGateway__factory,
+  ArbitrumL2DaiWormholeGateway__factory,
+  ArbitrumL2GovernanceRelay__factory,
 } from '../../typechain'
 import { deployUsingFactoryAndVerify, getContractFactory, waitForTx } from '../helpers'
 import { getAddressOfNextDeployedContract } from '../pe-utils/address'
@@ -30,8 +30,8 @@ interface ArbitrumWormholeBridgeDeployOpts {
 export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeDeployOpts) {
   console.log('Deploying Arbitrum Wormhole Bridge...')
   const futureL1WormholeBridgeAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
-  const L2WormholeBridgeFactory = getContractFactory<L2DaiWormholeGateway__factory>(
-    'L2DaiWormholeGateway',
+  const L2WormholeBridgeFactory = getContractFactory<ArbitrumL2DaiWormholeGateway__factory>(
+    'ArbitrumL2DaiWormholeGateway',
     opts.l2Signer,
   )
   const l2WormholeBridge = await deployUsingFactoryAndVerify(opts.l2Signer, L2WormholeBridgeFactory, [
@@ -41,7 +41,8 @@ export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeD
   ])
   console.log('L2DaiWormholeGateway deployed at: ', l2WormholeBridge.address)
 
-  const L1WormholeBridgeFactory = getContractFactory<L1DaiWormholeGateway__factory>('L1DaiWormholeGateway')
+  const L1WormholeBridgeFactory =
+    getContractFactory<ArbitrumL1DaiWormholeGateway__factory>('ArbitrumL1DaiWormholeGateway')
   const l1WormholeBridge = await deployUsingFactoryAndVerify(opts.l1Signer, L1WormholeBridgeFactory, [
     opts.makerSdk.dai.address,
     l2WormholeBridge.address,
@@ -68,7 +69,7 @@ interface ArbitrumBaseBridgeDeployOpts {
 export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpts) {
   const l1Escrow = await deployUsingFactoryAndVerify(
     opts.l1Signer,
-    getContractFactory<L1Escrow__factory>('L1Escrow'),
+    getContractFactory<ArbitrumL1Escrow__factory>('ArbitrumL1Escrow'),
     [],
   )
   console.log('L1Escrow deployed at: ', l1Escrow.address)
@@ -79,7 +80,7 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
   console.log('Deploying Arbitrum Base Bridge...')
   const l2Dai = await deployUsingFactoryAndVerify(
     opts.l2Signer,
-    getContractFactory<Dai__factory>('Dai', opts.l2Signer),
+    getContractFactory<ArbitrumDai__factory>('ArbitrumDai', opts.l2Signer),
     [],
   )
   console.log('L2Dai deployed at: ', l2Dai.address)
@@ -87,7 +88,7 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
   const futureL1DaiGatewayAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
   const l2DaiGateway = await deployUsingFactoryAndVerify(
     opts.l2Signer,
-    getContractFactory<L2DaiGateway__factory>('L2DaiGateway'),
+    getContractFactory<ArbitrumL2DaiGateway__factory>('ArbitrumL2DaiGateway'),
     [futureL1DaiGatewayAddress, l2RouterAddress, opts.makerSdk.dai.address, l2Dai.address],
   )
   console.log('L2DaiGateway deployed at: ', l2DaiGateway.address)
@@ -95,7 +96,7 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
 
   const l1DaiGateway = await deployUsingFactoryAndVerify(
     opts.l1Signer,
-    getContractFactory<L1DaiGateway__factory>('L1DaiGateway'),
+    getContractFactory<ArbitrumL1DaiGateway__factory>('ArbitrumL1DaiGateway'),
     [
       l2DaiGateway.address,
       l1RouterAddress,
@@ -111,17 +112,17 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
   const futureL1GovRelayAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
   const l2GovRelay = await deployUsingFactoryAndVerify(
     opts.l2Signer,
-    getContractFactory<L2ArbitrumGovernanceRelay__factory>('L2ArbitrumGovernanceRelay'),
+    getContractFactory<ArbitrumL2GovernanceRelay__factory>('ArbitrumL2GovernanceRelay'),
     [futureL1GovRelayAddress],
   )
   console.log('L2ArbitrumGovernanceRelay deployed at', l2GovRelay.address)
   const l1GovRelay = await deployUsingFactoryAndVerify(
     opts.l1Signer,
-    getContractFactory<L1ArbitrumGovernanceRelay__factory>('L1ArbitrumGovernanceRelay'),
+    getContractFactory<ArbitrumL1GovernanceRelay__factory>('ArbitrumL1GovernanceRelay'),
     [opts.arbitrumRollupSdk.inbox.address, l2GovRelay.address],
   )
   expect(l1GovRelay.address).to.be.eq(futureL1GovRelayAddress, 'Future address doesnt match actual address')
-  console.log('L1ArbitrumGovernanceRelay deployed at', l1GovRelay.address)
+  console.log('ArbitrumL1GovernanceRelay deployed at', l1GovRelay.address)
 
   // bridge has to be approved on escrow because settling moves tokens
   await waitForTx(l1Escrow.approve(opts.makerSdk.dai.address, l1DaiGateway.address, constants.MaxUint256))
