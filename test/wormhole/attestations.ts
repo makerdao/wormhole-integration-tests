@@ -1,7 +1,5 @@
 import { BigNumber, ContractReceipt, Event, Wallet } from 'ethers'
-import { arrayify, hashMessage, keccak256 } from 'ethers/lib/utils'
-
-import { L2DAIWormholeBridgeInterface } from '../../typechain/L2DAIWormholeBridge'
+import { arrayify, hashMessage, Interface, keccak256 } from 'ethers/lib/utils'
 
 interface WormholeGUID {
   sourceDomain: string
@@ -15,7 +13,7 @@ interface WormholeGUID {
 
 export async function getAttestations(
   txReceipt: ContractReceipt,
-  l2WormholeBridgeInterface: L2DAIWormholeBridgeInterface,
+  l2WormholeBridgeInterface: Interface,
   signers: Wallet[],
 ): Promise<{ signHash: string; signatures: string; wormholeGUID: WormholeGUID; guidHash: string }> {
   const initEvent = txReceipt.events?.find((e: Event) => e.event === 'WormholeInitialized')!
