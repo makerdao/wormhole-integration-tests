@@ -77,9 +77,7 @@ export default defineConfig({
         l1DaiGateway: '0xb1cfD43BD287B2E94bf00140091A9Cca47f462cC',
       },
       arbitrum: {
-        fake_bridge: '0xc710c7eed1f6d29bc4251c1064f5b27824af72b8', // modified arbitrum bridge allowing arbitrary L2>L1 message passing without delay
         inbox: '0x578BAde599406A8fE3d24Fd7f7211c0911F5B29e', // real inbox
-        fake_inbox: '0x0495dF1ed467FeeCe56D36866acb3348BE407b9D', // modified inbox allowing arbitrary L2>L1 message passing without delay
       },
     },
 

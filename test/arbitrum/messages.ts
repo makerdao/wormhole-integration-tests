@@ -1,8 +1,8 @@
 import { expect } from 'chai'
-import { BigNumber, ContractReceipt, ContractTransaction, ethers, providers, Signer, utils } from 'ethers'
+import { BigNumber, ContractReceipt, ContractTransaction, ethers, providers, utils } from 'ethers'
 
+import { FakeArbitrumOutbox } from '../../typechain'
 import { L2WormholeBridgeLike } from '../wormhole'
-import { ArbitrumSdk } from '.'
 
 export async function waitToRelayTxsToL2(
   l1Tx: Promise<ContractTransaction> | ContractTransaction | Promise<ContractReceipt> | ContractReceipt,
@@ -91,19 +91,14 @@ function calculateL2RetryableTransactionHash(requestID: string) {
   )
 }
 
-export function makeRelayTxToL1(
-  l2CrossDomainEnabled: L2WormholeBridgeLike,
-  arbitrumSdk: ArbitrumSdk,
-  l1Signer: Signer,
-) {
+export function makeRelayTxToL1(l2CrossDomainEnabled: L2WormholeBridgeLike, fakeOutbox: FakeArbitrumOutbox) {
   return (l2OriginatingTx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt) =>
-    waitToRelayTxToL1(l2CrossDomainEnabled, arbitrumSdk, l1Signer, l2OriginatingTx)
+    waitToRelayTxToL1(l2CrossDomainEnabled, fakeOutbox, l2OriginatingTx)
 }
 
 async function waitToRelayTxToL1(
   l2CrossDomainEnabled: L2WormholeBridgeLike,
-  arbitrumSdk: ArbitrumSdk,
-  l1Signer: Signer,
+  fakeOutbox: FakeArbitrumOutbox,
   l2OriginatingTx: Promise<ContractTransaction> | ContractTransaction | ContractReceipt,
 ): Promise<providers.TransactionReceipt[]> {
   const awaitedL2Tx: any = await l2OriginatingTx
@@ -112,9 +107,9 @@ async function waitToRelayTxToL1(
   const { to, data } = l2CrossDomainEnabled.interface.parseLog(txToL1Event!).args
 
   const l1TxReceipt = await (
-    await arbitrumSdk.fake_bridge
-      .connect(l1Signer)
-      .callContract(l2CrossDomainEnabled.address, to, data, { gasLimit: 500000 })
+    await fakeOutbox.executeTransaction(0, [], 0, l2CrossDomainEnabled.address, to, 0, 0, 0, 0, data, {
+      gasLimit: 500000,
+    })
   ).wait()
 
   return [l1TxReceipt]

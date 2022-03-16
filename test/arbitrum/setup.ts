@@ -9,14 +9,17 @@ import { L1AddWormholeArbitrumSpell__factory, L2AddWormholeDomainSpell__factory 
 import { deployUsingFactory, getContractFactory, waitForTx } from '../helpers'
 import { RetryProvider } from '../helpers/RetryProvider'
 import { deployWormhole, DomainSetupOpts, DomainSetupResult } from '../wormhole'
-import { getGasPriceBid, getMaxGas, getMaxSubmissionPrice } from './deposit'
 import {
   deployArbitrumBaseBridge,
   deployArbitrumWormholeBridge,
+  deployFakeArbitrumInbox,
   depositToStandardBridge,
+  getGasPriceBid,
+  getMaxGas,
+  getMaxSubmissionPrice,
   makeRelayTxToL1,
   waitToRelayTxsToL2,
-} from './index'
+} from '.'
 
 const TTL = 300
 
@@ -81,6 +84,10 @@ export async function setupArbitrumTests({
     makerSdk,
     arbitrumRollupSdk,
   })
+
+  // Deploy a fake Arbitrum Inbox that allows relaying arbitrary L2>L1 messages without delay
+  const { fakeInbox, fakeOutbox } = await deployFakeArbitrumInbox({ l1Signer, arbitrumRollupSdk })
+
   const wormholeBridgeSdk = await deployArbitrumWormholeBridge({
     makerSdk,
     l1Signer,
@@ -88,10 +95,10 @@ export async function setupArbitrumTests({
     wormholeSdk,
     baseBridgeSdk,
     slaveDomain: domain,
-    arbitrumRollupSdk,
+    arbitrumRollupSdk: { ...arbitrumRollupSdk, inbox: fakeInbox },
   })
 
-  const relayTxToL1 = makeRelayTxToL1(wormholeBridgeSdk.l2WormholeBridge, arbitrumRollupSdk, l1Signer)
+  const relayTxToL1 = makeRelayTxToL1(wormholeBridgeSdk.l2WormholeBridge, fakeOutbox)
   const relayTxToL2 = (
     l1Tx: Promise<ContractTransaction> | ContractTransaction | Promise<ContractReceipt> | ContractReceipt,
   ) => waitToRelayTxsToL2(l1Tx, arbitrumRollupSdk.inbox.address, l1Provider, l2Provider)
