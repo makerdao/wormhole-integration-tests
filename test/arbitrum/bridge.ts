@@ -10,6 +10,9 @@ import {
   ArbitrumL2DaiGateway__factory,
   ArbitrumL2DaiWormholeGateway__factory,
   ArbitrumL2GovernanceRelay__factory,
+  FakeArbitrumBridge__factory,
+  FakeArbitrumInbox__factory,
+  FakeArbitrumOutbox__factory,
 } from '../../typechain'
 import { deployUsingFactoryAndVerify, getContractFactory, waitForTx } from '../helpers'
 import { getAddressOfNextDeployedContract } from '../pe-utils/address'
@@ -46,7 +49,7 @@ export async function deployArbitrumWormholeBridge(opts: ArbitrumWormholeBridgeD
   const l1WormholeBridge = await deployUsingFactoryAndVerify(opts.l1Signer, L1WormholeBridgeFactory, [
     opts.makerSdk.dai.address,
     l2WormholeBridge.address,
-    opts.arbitrumRollupSdk.fake_inbox.address, // use a fake inbox that allows relaying arbitrary L2>L1 messages without delay
+    opts.arbitrumRollupSdk.inbox.address,
     opts.baseBridgeSdk.l1Escrow.address,
     opts.wormholeSdk.router.address,
   ])
@@ -153,3 +156,37 @@ export async function deployArbitrumBaseBridge(opts: ArbitrumBaseBridgeDeployOpt
 }
 
 export type ArbitrumBaseBridgeSdk = Awaited<ReturnType<typeof deployArbitrumBaseBridge>>
+
+interface FakeArbitrumInboxDeployOpts {
+  l1Signer: Signer
+  arbitrumRollupSdk: ArbitrumRollupSdk
+}
+
+export async function deployFakeArbitrumInbox(opts: FakeArbitrumInboxDeployOpts) {
+  const bridgeAddress = await opts.arbitrumRollupSdk.inbox.bridge()
+  const fakeInbox = await deployUsingFactoryAndVerify(
+    opts.l1Signer,
+    getContractFactory<FakeArbitrumInbox__factory>('FakeArbitrumInbox'),
+    [bridgeAddress], // use real bridge as default
+  )
+  console.log('FakeArbitrumInbox deployed at: ', fakeInbox.address)
+
+  const fakeBridge = await deployUsingFactoryAndVerify(
+    opts.l1Signer,
+    getContractFactory<FakeArbitrumBridge__factory>('FakeArbitrumBridge'),
+    [fakeInbox.address],
+  )
+  console.log('FakeArbitrumBridge deployed at: ', fakeBridge.address)
+
+  const fakeOutbox = await deployUsingFactoryAndVerify(
+    opts.l1Signer,
+    getContractFactory<FakeArbitrumOutbox__factory>('FakeArbitrumOutbox'),
+    [fakeBridge.address],
+  )
+  console.log('FakeArbitrumOutbox deployed at: ', fakeOutbox.address)
+
+  await waitForTx(fakeBridge.setOutbox(fakeOutbox.address, true))
+  await waitForTx(fakeInbox.rely(fakeBridge.address)) // allow fakeBridge to change fakeInbox's bridge
+
+  return { fakeInbox, fakeOutbox }
+}

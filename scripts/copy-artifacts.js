@@ -94,6 +94,9 @@ copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/PushBa
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/DaiJoinLike.json'), output)
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/VatLike.json'), output)
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/WormholeJoinLike.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/rinkeby/FakeArbitrumInbox.sol/FakeArbitrumInbox.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/rinkeby/FakeArbitrumBridge.sol/FakeArbitrumBridge.json'), output)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/rinkeby/FakeArbitrumOutbox.sol/FakeArbitrumOutbox.json'), output)
 
 copyHardhatArtifact(
   join(hardhatTestArtifacts, 'deploy/L1AddWormholeOptimismSpell.sol/L1AddWormholeOptimismSpell.json'),

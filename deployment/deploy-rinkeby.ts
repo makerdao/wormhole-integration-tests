@@ -7,7 +7,7 @@ import { mapValues } from 'lodash'
 import { Dictionary } from 'ts-essentials'
 dotenv.config()
 
-import { ArbitrumBaseBridgeSdk, deployArbitrumWormholeBridge } from '../test/arbitrum'
+import { ArbitrumBaseBridgeSdk, deployArbitrumWormholeBridge, deployFakeArbitrumInbox } from '../test/arbitrum'
 import { ArbitrumRollupSdk } from '../test/arbitrum/sdk'
 import { deployWormhole } from '../test/wormhole'
 import { performSanityChecks } from '../test/wormhole/checks'
@@ -50,6 +50,9 @@ async function main() {
     globalFeeTTL: feeTTL,
   })
 
+  // Deploy a fake Arbitrum Inbox that allows relaying arbitrary L2>L1 messages without delay
+  const { fakeInbox } = await deployFakeArbitrumInbox({ l1Signer, arbitrumRollupSdk })
+
   const wormholeBridgeSdk = await deployArbitrumWormholeBridge({
     makerSdk: rinkebySdk.maker,
     l1Signer,
@@ -57,7 +60,7 @@ async function main() {
     wormholeSdk,
     baseBridgeSdk,
     slaveDomain: arbitrumSlaveDomain,
-    arbitrumRollupSdk,
+    arbitrumRollupSdk: { ...arbitrumRollupSdk, inbox: fakeInbox },
   })
 
   await performSanityChecks(
