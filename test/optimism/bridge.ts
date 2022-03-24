@@ -4,11 +4,11 @@ import { constants, ethers, Signer } from 'ethers'
 import {
   OptimismDai__factory,
   OptimismL1DAITokenBridge__factory,
-  OptimismL1DAIWormholeBridge__factory,
+  OptimismL1DaiWormholeGateway__factory,
   OptimismL1Escrow__factory,
   OptimismL1GovernanceRelay__factory,
   OptimismL2DAITokenBridge__factory,
-  OptimismL2DAIWormholeBridge__factory,
+  OptimismL2DaiWormholeGateway__factory,
   OptimismL2GovernanceRelay__factory,
 } from '../../typechain'
 import { deployUsingFactoryAndVerify, getContractFactory, mintEther } from '../helpers'
@@ -32,7 +32,7 @@ export async function deployOptimismWormholeBridge(opts: OptimismWormholeBridgeD
   console.log('Deploying Optimism Wormhole Bridge...')
   const futureL1WormholeBridgeAddress = await getAddressOfNextDeployedContract(opts.l1Signer)
   const L2WormholeBridgeFactory =
-    getContractFactory<OptimismL2DAIWormholeBridge__factory>('OptimismL2DAIWormholeBridge')
+    getContractFactory<OptimismL2DaiWormholeGateway__factory>('OptimismL2DaiWormholeGateway')
   const l2WormholeBridge = await deployUsingFactoryAndVerify(opts.l2Signer, L2WormholeBridgeFactory, [
     opts.optimismRollupSdk.l2XDomainMessenger.address,
     opts.baseBridgeSdk.l2Dai.address,
@@ -42,7 +42,7 @@ export async function deployOptimismWormholeBridge(opts: OptimismWormholeBridgeD
   console.log('L2DAIWormholeBridge deployed at: ', l2WormholeBridge.address)
 
   const L1WormholeBridgeFactory =
-    getContractFactory<OptimismL1DAIWormholeBridge__factory>('OptimismL1DAIWormholeBridge')
+    getContractFactory<OptimismL1DaiWormholeGateway__factory>('OptimismL1DaiWormholeGateway')
   const l1WormholeBridge = await deployUsingFactoryAndVerify(opts.l1Signer, L1WormholeBridgeFactory, [
     opts.makerSdk.dai.address,
     l2WormholeBridge.address,

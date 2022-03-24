@@ -3,11 +3,11 @@ import { Contract } from 'ethers'
 import { Signer } from 'ethers'
 import { Interface } from 'ethers/lib/utils'
 
-import { OptimismL1DAIWormholeBridge, OptimismL2DAIWormholeBridge } from '../../typechain'
+import { OptimismL1DaiWormholeGateway, OptimismL2DaiWormholeGateway } from '../../typechain'
 
-export type L1WormholeBridgeLike = Pick<OptimismL1DAIWormholeBridge, 'address' | 'l1Token' | 'escrow'>
+export type L1WormholeBridgeLike = Pick<OptimismL1DaiWormholeGateway, 'address' | 'l1Token' | 'l1Escrow'>
 export type L2WormholeBridgeLike = Pick<
-  OptimismL2DAIWormholeBridge,
+  OptimismL2DaiWormholeGateway,
   | 'address'
   | 'l2Token'
   | 'deny'
