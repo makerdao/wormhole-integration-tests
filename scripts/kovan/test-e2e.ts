@@ -39,7 +39,7 @@ async function main() {
     '0xcEBe310e86d44a55EC6Be05e0c233B033979BC67',
   )
   const l2Bridge = getContractFactory<OptimismL2DaiWormholeGateway__factory>(
-    'OptimismL2DAIWormholeBridge',
+    'OptimismL2DaiWormholeGateway',
     l2Signer,
   ).attach('0x45440Ae4988965A4cD94651E715fC9A04e62Fb41')
 
