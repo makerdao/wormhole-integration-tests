@@ -76,6 +76,8 @@ copyOptimismBridgeArtifact('l1/L1DaiWormholeGateway.sol/L1DaiWormholeGateway.jso
 copyOptimismBridgeArtifact('l2/L2DaiWormholeGateway.sol/L2DaiWormholeGateway.json', output)
 copyOptimismBridgeArtifact('l1/L1GovernanceRelay.sol/L1GovernanceRelay.json', output)
 copyOptimismBridgeArtifact('l2/L2GovernanceRelay.sol/L2GovernanceRelay.json', output)
+copyOptimismBridgeArtifact('common/WormholeInterfaces.sol/IL1WormholeGateway.json', output)
+copyOptimismBridgeArtifact('common/WormholeInterfaces.sol/IL2WormholeGateway.json', output)
 
 // copy arbitrum-dai-bridge artifacts
 copyArbitrumBridgeArtifact('l2/dai.sol/Dai.json', output)
