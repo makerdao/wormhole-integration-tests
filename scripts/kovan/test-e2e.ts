@@ -9,7 +9,7 @@ import { formatEther, parseEther } from 'ethers/lib/utils'
 
 import { getContractFactory, waitForTx } from '../../test/helpers'
 import { getAttestations } from '../../test/wormhole'
-import { OptimismL2DAIWormholeBridge__factory, WormholeOracleAuth__factory } from '../../typechain'
+import { OptimismL2DaiWormholeGateway__factory, WormholeOracleAuth__factory } from '../../typechain'
 
 const bytes32 = ethers.utils.formatBytes32String
 const masterDomain = 'KOVAN-MASTER-1'
@@ -38,8 +38,8 @@ async function main() {
   const oracleAuth = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', receiver).attach(
     '0xcEBe310e86d44a55EC6Be05e0c233B033979BC67',
   )
-  const l2Bridge = getContractFactory<OptimismL2DAIWormholeBridge__factory>(
-    'OptimismL2DAIWormholeBridge',
+  const l2Bridge = getContractFactory<OptimismL2DaiWormholeGateway__factory>(
+    'OptimismL2DaiWormholeGateway',
     l2Signer,
   ).attach('0x45440Ae4988965A4cD94651E715fC9A04e62Fb41')
 

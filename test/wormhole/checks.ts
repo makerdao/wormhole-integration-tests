@@ -48,7 +48,7 @@ export async function performSanityChecks(
 
   expect(await wormholeSdk.join.vat()).to.be.eq(makerSdk.vat.address)
   expect(await wormholeSdk.oracleAuth.wormholeJoin()).to.be.eq(wormholeSdk.join.address)
-  expect(await wormholeBridgeSdk.l1WormholeBridge.escrow()).to.be.eq(baseBridgeSdk.l1Escrow.address)
+  expect(await wormholeBridgeSdk.l1WormholeBridge.l1Escrow()).to.be.eq(baseBridgeSdk.l1Escrow.address)
 }
 
 function normalizeAddresses(addresses: string[]): string[] {
