@@ -41,8 +41,8 @@ If you wish to quickly test some changes in smart contract code, just tweak sour
 
 5. Run `npx hardhat run deployment/rinkeby/cast-l1-spell.ts` to deploy and cast the L1 spell on rinkeby.
 
-6. 7. To validate the resulting changes, copy the addresses of the newly deployed `oracleAuth` and `l2WormholeGateway`
-      into `deployment/rinkeby/test-e2e.ts` and run `npx hardhat run deployment/rinkeby/test-e2e.ts`.
+6. To validate the resulting changes, copy the addresses of the newly deployed `oracleAuth` and `l2WormholeGateway` into
+   `deployment/rinkeby/test-e2e.ts` and run `npx hardhat run deployment/rinkeby/test-e2e.ts`.
 
 ### Latest deployment
 
