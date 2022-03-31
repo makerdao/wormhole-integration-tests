@@ -11,10 +11,10 @@ dotenv.config()
 
 import { TransactionReceipt } from '@ethersproject/abstract-provider'
 import { JsonRpcProvider } from '@ethersproject/providers'
+import { assert } from 'chai'
 import { Signer } from 'ethers'
 
 import { WormholeOracleAuth__factory } from '../../typechain'
-import { assert } from 'chai'
 
 const oracleAuth = '0x0b0D629e294Af96A6cc245a89A5CEa92C8Be9da4'
 const l1Spell: string | undefined = '0xC48b714c3Ce421671801a248d94cE1a5ef14AF8f'

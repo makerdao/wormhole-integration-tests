@@ -4,7 +4,6 @@ import { Provider } from '@ethersproject/providers'
 import { getRequiredEnv } from '@makerdao/hardhat-utils'
 import { ethers } from 'ethers'
 import { Interface } from 'ethers/lib/utils'
-
 import { mapValues } from 'lodash'
 
 import { getGasPriceBid, getMaxGas, getMaxSubmissionPrice } from '../../test/arbitrum'
