@@ -7,7 +7,7 @@ cd ../repos
 echo "Setting up dss-wormhole"
 cd dss-wormhole
 git submodule update --init --recursive
-dapp --use solc:0.8.11 build --extract
+dapp --use solc:0.8.13 build --extract
 cd ..
 
 echo "Setting up optimism-dai-bridge"

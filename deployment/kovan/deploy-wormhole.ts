@@ -7,16 +7,16 @@ import { mapValues } from 'lodash'
 import { Dictionary } from 'ts-essentials'
 dotenv.config()
 
-import { deployOptimismWormholeBridge, OptimismBaseBridgeSdk, OptimismRollupSdk } from '../test/optimism'
-import { deployWormhole } from '../test/wormhole'
-import { performSanityChecks } from '../test/wormhole/checks'
+import { deployOptimismWormholeBridge, OptimismBaseBridgeSdk, OptimismRollupSdk } from '../../test/optimism'
+import { deployWormhole } from '../../test/wormhole'
+import { performSanityChecks } from '../../test/wormhole/checks'
 
 const bytes32 = ethers.utils.formatBytes32String
 
 async function main() {
   const fee = 0 // 0 fees
   const feeTTL = 60 * 60 * 24 * 8 // flush should happen more or less, 1 day after initWormhole, and should take 7 days to finalize
-  const ilk: string = bytes32('WH-KOVAN-TEST-1')
+  const ilk: string = bytes32('WH-KOVAN-TEST-2')
   const masterDomain = bytes32('KOVAN-MASTER-1')
   const optimismSlaveDomain = bytes32('KOVAN-SLAVE-OPTIMISM-1')
 

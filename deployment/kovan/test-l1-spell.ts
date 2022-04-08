@@ -11,9 +11,13 @@ dotenv.config()
 
 import { TransactionReceipt } from '@ethersproject/abstract-provider'
 import { JsonRpcProvider } from '@ethersproject/providers'
+import { assert } from 'chai'
 import { Signer } from 'ethers'
 
 import { WormholeOracleAuth__factory } from '../../typechain'
+
+const oracleAuth = '0x0b0D629e294Af96A6cc245a89A5CEa92C8Be9da4'
+const l1Spell: string | undefined = '0xC48b714c3Ce421671801a248d94cE1a5ef14AF8f'
 
 // note: before running this script you need to setup hardhat network to use with kovan network in fork mode
 async function main() {
@@ -22,24 +26,29 @@ async function main() {
   const mkrWhaleAddress = '0xd200790f62c8da69973e61d4936cfE4f356ccD07'
   console.log('Network block number: ', await signer.provider!.getBlockNumber())
 
-  // const spellInterface = new Interface(['function cast()', 'function schedule()'])
-  // const l1Spell = new Contract('0x66b3d63621fdd5967603a824114da95cc3a35107', spellInterface)
-  const SpellFactory = await hre.ethers.getContractFactory('L1KovanAddWormholeDomainSpell')
-  const l1Spell = await deployUsingFactoryAndVerify(signer, SpellFactory, [])
-  console.log('L1 spell deployed at: ', l1Spell.address)
+  let l1SpellContract
+  if (l1Spell) {
+    const spellInterface = new Interface(['function cast()', 'function schedule()'])
+    l1SpellContract = new Contract(l1Spell, spellInterface)
+  } else {
+    const SpellFactory = await hre.ethers.getContractFactory('L1KovanAddWormholeDomainSpell')
+    l1SpellContract = await deployUsingFactoryAndVerify(signer, SpellFactory, [])
+    console.log('L1 spell deployed at: ', l1SpellContract.address)
+  }
 
   const kovanSdk = getKovanSdk(signer.provider! as any)
 
-  await executeDssSpell(signer, await kovanSdk.maker.pause_proxy.owner(), l1Spell, mkrWhaleAddress)
+  await executeDssSpell(signer, await kovanSdk.maker.pause_proxy.owner(), l1SpellContract, mkrWhaleAddress)
 
-  console.log('DAI before: ', formatEther(await kovanSdk.maker.dai.balanceOf(userAddress)))
+  const daiBefore = await kovanSdk.maker.dai.balanceOf(userAddress)
+  console.log('DAI before: ', formatEther(daiBefore))
 
-  const oracleAuth = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', signer).attach(
-    '0xcEBe310e86d44a55EC6Be05e0c233B033979BC67',
+  const oracleAuthContract = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', signer).attach(
+    oracleAuth,
   )
 
   await waitForTx(
-    oracleAuth.requestMint(
+    oracleAuthContract.requestMint(
       [
         '0x4b4f56414e2d534c4156452d4f5054494d49534d2d3100000000000000000000',
         '0x4b4f56414e2d4d41535445522d31000000000000000000000000000000000000',
@@ -55,7 +64,10 @@ async function main() {
     ),
   )
 
-  console.log('DAI after: ', formatEther(await kovanSdk.maker.dai.balanceOf(userAddress)))
+  const daiAfter = await kovanSdk.maker.dai.balanceOf(userAddress)
+  console.log('DAI after: ', formatEther(daiAfter))
+
+  assert(daiAfter.gt(daiBefore), 'L1 DAI balance should have been increased')
 }
 
 async function executeDssSpell(
@@ -78,7 +90,7 @@ async function executeDssSpell(
   await waitForTx(chief.lift(spell.address))
   console.log('Scheduling spell...')
   await waitForTx(spell.connect(l1Signer).schedule())
-  console.log('Waiting pause delay...')
+  console.log('Waiting for pause delay...')
   await sleep(60000)
   console.log('Casting spell...')
   return await waitForTx(spell.connect(l1Signer).cast())

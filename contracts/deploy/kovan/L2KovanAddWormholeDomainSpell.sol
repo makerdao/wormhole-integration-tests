@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.13;
 
 interface DaiLike {
   function rely(address usr) external;
 }
 
-interface WormholeBridgeLike {
+interface WormholeGatewayLike {
   function file(
     bytes32 what,
     bytes32 domain,
@@ -31,14 +31,14 @@ interface WormholeBridgeLike {
 contract L2KovanAddWormholeDomainSpell {
   function execute() external {
     DaiLike dai = DaiLike(0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1);
-    WormholeBridgeLike wormholeBridge = WormholeBridgeLike(
-      0x45440Ae4988965A4cD94651E715fC9A04e62Fb41
+    WormholeGatewayLike wormholeGateway = WormholeGatewayLike(
+      0x0aeDbEf4105fdfc0db5A3Cd8C827bE2efA93ebe0
     );
     bytes32 masterDomain = "KOVAN-MASTER-1";
 
-    // wormhole bridge has to burn without approval
-    dai.rely(address(wormholeBridge));
+    // wormhole gateway has to burn without approval
+    dai.rely(address(wormholeGateway));
 
-    wormholeBridge.file(bytes32("validDomains"), masterDomain, 1);
+    wormholeGateway.file(bytes32("validDomains"), masterDomain, 1);
   }
 }

@@ -1,5 +1,6 @@
 import { getOptimismKovanSdk } from '@dethcrypto/eth-sdk-client'
 import { getRequiredEnv } from '@makerdao/hardhat-utils'
+import { assert } from 'chai'
 import * as dotenv from 'dotenv'
 import { ethers, Wallet } from 'ethers'
 import { formatEther, Interface, parseUnits } from 'ethers/lib/utils'
@@ -13,11 +14,13 @@ const bytes32 = hre.ethers.utils.formatBytes32String
 
 import { OptimismL2DaiWormholeGateway__factory } from '../../typechain'
 
+const l2Spell = '0xEd326504C77Dcd0Ffbb554a7925338EEd3F5fE01'
+const l2WormholeGateway = '0x0aeDbEf4105fdfc0db5A3Cd8C827bE2efA93ebe0'
+
 // note: before running this script you need to setup hardhat network to use with optimistic-kovan network in fork mode
 async function main() {
   const masterDomain = bytes32('KOVAN-MASTER-1')
   const user = '0x4BeE0574349BF0d8caB290dE4f38D38FEEEED91A'
-  const l2Spell = '0x992C01191D62C0C333ef23935978749B50eDbC82'
   const spellInterface = new Interface(['function execute()'])
   const oraclePrivKey = getRequiredEnv('ORACLE_PRIV_KEY')
 
@@ -42,12 +45,13 @@ async function main() {
       ),
   )
 
-  console.log('DAI before: ', formatEther(await optimismKovanSdk.optimismDaiBridge.dai.balanceOf(user)))
+  const daiBefore = await optimismKovanSdk.optimismDaiBridge.dai.balanceOf(user)
+  console.log('DAI before: ', formatEther(daiBefore))
 
   const l2WormholeBridge = getContractFactory<OptimismL2DaiWormholeGateway__factory>(
     'OptimismL2DaiWormholeGateway',
     signer,
-  ).attach('0x45440Ae4988965A4cD94651E715fC9A04e62Fb41')
+  ).attach(l2WormholeGateway)
   const tx = await waitForTx(
     l2WormholeBridge['initiateWormhole(bytes32,address,uint128)'](
       masterDomain,
@@ -56,7 +60,9 @@ async function main() {
     ),
   )
 
-  console.log('DAI after: ', formatEther(await optimismKovanSdk.optimismDaiBridge.dai.balanceOf(user)))
+  const daiAfter = await optimismKovanSdk.optimismDaiBridge.dai.balanceOf(user)
+  console.log('DAI after: ', formatEther(daiAfter))
+  assert(daiAfter.lt(daiBefore), 'L2 DAI balance should have been reduced')
 
   const attestations = await getAttestations(tx, l2WormholeBridge.interface, [
     new Wallet(oraclePrivKey, signer.provider),

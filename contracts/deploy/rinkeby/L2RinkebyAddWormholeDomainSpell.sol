@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.13;
 
 interface DaiLike {
   function rely(address usr) external;
@@ -32,7 +32,7 @@ contract L2RinkebyAddWormholeDomainSpell {
   function execute() external {
     DaiLike dai = DaiLike(0x78e59654Bc33dBbFf9FfF83703743566B1a0eA15);
     WormholeBridgeLike wormholeBridge = WormholeBridgeLike(
-      0xEbA80E9d7C6C2F575a642a43199e32F47Bbd1306
+      0x327c2f7aCd799f31535880Af54C2bCAB1384Ecc3
     );
     bytes32 masterDomain = "RINKEBY-MASTER-1";
 

@@ -2,7 +2,7 @@ import 'dotenv/config'
 
 import { getKovanSdk, getOptimismKovanSdk } from '@dethcrypto/eth-sdk-client'
 import { getRequiredEnv } from '@makerdao/hardhat-utils'
-import { expect } from 'chai'
+import { assert, expect } from 'chai'
 import * as ethers from 'ethers'
 import { Wallet } from 'ethers'
 import { formatEther, parseEther } from 'ethers/lib/utils'
@@ -14,6 +14,9 @@ import { OptimismL2DaiWormholeGateway__factory, WormholeOracleAuth__factory } fr
 const bytes32 = ethers.utils.formatBytes32String
 const masterDomain = 'KOVAN-MASTER-1'
 
+const oracleAuth = '0xcEBe310e86d44a55EC6Be05e0c233B033979BC67'
+const l2WormholeGateway = '0x0aeDbEf4105fdfc0db5A3Cd8C827bE2efA93ebe0'
+
 async function main() {
   const { l1Signer, l2Signer } = await setupSigners()
   const senderAddress = l1Signer.address
@@ -23,38 +26,38 @@ async function main() {
   console.log('Current L1 block: ', l1StartingBlock)
   console.log('Current L2 block: ', l2StartingBlock)
 
-  const kovanSdk = getKovanSdk(l1Signer)
-  const optimismKovanSdk = getOptimismKovanSdk(l2Signer)
-
   const receiverPrivKey = getRequiredEnv('RECEIVER_PRIV_KEY')
   const receiver = new Wallet(receiverPrivKey, l1Signer.provider)
   const oraclePrivKey = getRequiredEnv('ORACLE_PRIV_KEY')
   const oracle = new Wallet(oraclePrivKey, l2Signer.provider)
   console.log('oracle:', oracle.address, 'receiver:', receiver.address)
 
-  console.log('Sender DAI before: ', formatEther(await optimismKovanSdk.optimismDaiBridge.dai.balanceOf(senderAddress)))
-  console.log('Receiver DAI before: ', formatEther(await kovanSdk.maker.dai.balanceOf(receiver.address)))
+  const kovanSdk = getKovanSdk(l1Signer)
+  const optimismKovanSdk = getOptimismKovanSdk(l2Signer)
 
-  const oracleAuth = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', receiver).attach(
-    '0xcEBe310e86d44a55EC6Be05e0c233B033979BC67',
-  )
-  const l2Bridge = getContractFactory<OptimismL2DaiWormholeGateway__factory>(
+  const senderBefore = await optimismKovanSdk.optimismDaiBridge.dai.balanceOf(senderAddress)
+  const receiverBefore = await kovanSdk.maker.dai.balanceOf(receiver.address)
+  console.log('Sender DAI before: ', formatEther(senderBefore))
+  console.log('Receiver DAI before: ', formatEther(receiverBefore))
+
+  const auth = getContractFactory<WormholeOracleAuth__factory>('WormholeOracleAuth', receiver).attach(oracleAuth)
+  const l2Gateway = getContractFactory<OptimismL2DaiWormholeGateway__factory>(
     'OptimismL2DaiWormholeGateway',
     l2Signer,
-  ).attach('0x45440Ae4988965A4cD94651E715fC9A04e62Fb41')
+  ).attach(l2WormholeGateway)
 
   console.log('initiateWormhole...')
   const txR = await waitForTx(
-    l2Bridge['initiateWormhole(bytes32,address,uint128)'](bytes32(masterDomain), receiver.address, parseEther('0.1')),
+    l2Gateway['initiateWormhole(bytes32,address,uint128)'](bytes32(masterDomain), receiver.address, parseEther('0.1')),
   )
 
   console.log('get PECU attestation...')
-  const attestations = await getAttestations(txR, l2Bridge.interface, [oracle])
+  const attestations = await getAttestations(txR, l2Gateway.interface, [oracle])
 
   console.log('Attestations: ', JSON.stringify(attestations))
 
   console.log('requestMint...')
-  await waitForTx(oracleAuth.requestMint(attestations.wormholeGUID, attestations.signatures, 0, 0))
+  await waitForTx(auth.requestMint(attestations.wormholeGUID, attestations.signatures, 0, 0))
   // await waitForTx(
   //   oracleAuth.requestMint(
   //     [
@@ -72,8 +75,13 @@ async function main() {
   //   ),
   // )
 
-  console.log('Sender DAI after: ', formatEther(await optimismKovanSdk.optimismDaiBridge.dai.balanceOf(senderAddress)))
-  console.log('Receiver DAI after: ', formatEther(await kovanSdk.maker.dai.balanceOf(receiver.address)))
+  const senderAfter = await optimismKovanSdk.optimismDaiBridge.dai.balanceOf(senderAddress)
+  const receiverAfter = await kovanSdk.maker.dai.balanceOf(receiver.address)
+  console.log('Sender DAI after: ', formatEther(senderAfter))
+  console.log('Receiver DAI after: ', formatEther(receiverAfter))
+
+  assert(senderAfter.lt(senderBefore), 'L2 Dai balance should have been reduced')
+  assert(receiverAfter.gt(receiverBefore), 'L1 Dai balance should have been increased')
 }
 
 async function setupSigners() {
