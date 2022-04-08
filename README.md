@@ -39,7 +39,8 @@ If you wish to quickly test some changes in smart contract code, just tweak sour
    `constantFees` (WormholeConstantFees), `slaveDomainBridge` (L1WormholeGateway) and `l2ConfigureDomainSpell`
    (L2RinkebyAddWormholeDomainSpell) in `contracts/deploy/rinkeby/L1RinkebyAddWormholeDomainSpell.sol`.
 
-5. Run `npx hardhat run deployment/rinkeby/cast-l1-spell.ts` to deploy and cast the L1 spell on rinkeby.
+5. Run `npx hardhat run deployment/rinkeby/cast-l1-spell.ts` to deploy and cast the L1 spell on rinkeby. Wait ~5 minutes
+   for the execution of the L2 spell to be confirmed.
 
 6. To validate the resulting changes, copy the addresses of the newly deployed `oracleAuth` and `l2WormholeGateway` into
    `deployment/rinkeby/test-e2e.ts` and run `npx hardhat run deployment/rinkeby/test-e2e.ts`.
@@ -49,16 +50,16 @@ If you wish to quickly test some changes in smart contract code, just tweak sour
 ```
 {
    "Wormhole": {
-      "join": "",
-      "oracleAuth": "",
-      "router": "",
-      "constantFee": "",
-      "relay": ""
+      "join": "0x894DB23D804c626f1aAA89a2Bc3280052e6c4750",
+      "oracleAuth": "0x1E7722E502D3dCbB0704f99c75c99a5402598f13",
+      "router": "0x26266ff35E2d69C6a2DC3fAE9FA71456043a0611",
+      "constantFee": "0xeFf66D2A040097919A1A36D9D8816c21acC3C6C0",
+      "relay": "0xC35787975484A858B878032B045B6E0B6EfE2e2c"
    }
 
    "Arbitrum wormhole gateways": {
-      "l2WormholeGateway": "",
-      "l1WormholeGateway": ""
+      "l2WormholeGateway": "0x327c2f7aCd799f31535880Af54C2bCAB1384Ecc3",
+      "l1WormholeGateway": "0x7b84fFac4A71fE09b14CfF4E0A6429dFfa78630D"
    }
 
    "Legacy (slow) Dai withdrawal bridge": {
@@ -69,8 +70,8 @@ If you wish to quickly test some changes in smart contract code, just tweak sour
    }
 
    "Spells": {
-      "l1": "",
-      "l2": ""
+      "l1": "0x419D6a7603975fcFE5A2d21d7C0ef33D240eA27c",
+      "l2": "0x65adb7A66759304b5A081506Baad5408F8ceb650"
    }
 }
 ```

@@ -86,10 +86,10 @@ contract DssSpellAction is DssAction {
   uint256 public constant RAY = 10**27;
   uint256 public constant RAD = 10**45;
 
-  uint256 public constant l1CallValue = 10244631004560;
+  uint256 public constant l1CallValue = 1775697594352;
   uint256 public constant maxGas = 139212;
-  uint256 public constant gasPriceBid = 73407430;
-  uint256 public constant maxSubmissionCost = 25435859400;
+  uint256 public constant gasPriceBid = 12695842;
+  uint256 public constant maxSubmissionCost = 8284037848;
 
   string public constant override description = "Rinkeby Arbitrum Wormhole deployment spell";
 
@@ -99,12 +99,12 @@ contract DssSpellAction is DssAction {
 
   function actions() public override {
     bytes32 masterDomain = "RINKEBY-MASTER-1";
-    WormholeJoinLike wormholeJoin = WormholeJoinLike(0x0b6d772fC678B3b3590C81333BeC3daE8Ce381f8);
+    WormholeJoinLike wormholeJoin = WormholeJoinLike(0x894DB23D804c626f1aAA89a2Bc3280052e6c4750);
     address vow = 0xD9dFdf1f1604eF572EFd9c8c2e5c6DDca659150A;
     VatLike vat = VatLike(0x66b3D63621FDD5967603A824114Da95cc3A35107);
     uint256 globalLine = 10000000000 * RAD;
-    RouterLike router = RouterLike(0x44f50006236057bAA80c65F69f26De6A37a7F1DC);
-    OracleAuthLike oracleAuth = OracleAuthLike(0x2629Fc24D68DA19EEbE21A41e617965d5D167AA5);
+    RouterLike router = RouterLike(0x26266ff35E2d69C6a2DC3fAE9FA71456043a0611);
+    OracleAuthLike oracleAuth = OracleAuthLike(0x1E7722E502D3dCbB0704f99c75c99a5402598f13);
     address[] memory oracles = new address[](5);
     oracles[0] = 0xC4756A9DaE297A046556261Fa3CD922DFC32Db78; // OCU
     oracles[1] = 0x23ce419DcE1De6b3647Ca2484A25F595132DfBd2; // OCU
@@ -125,14 +125,14 @@ contract DssSpellAction is DssAction {
     // configure optimism wormhole
     bytes32 slaveDomain = "RINKEBY-SLAVE-ARBITRUM-1";
     uint256 optimismSlaveLine = 100 * RAD;
-    address constantFees = 0xc078910Dd3693FC34220E9eBAcc336A37ccD9ECc;
-    address slaveDomainBridge = 0x9629b2B983C45a4d268C441ace8e9F00831FF858;
+    address constantFees = 0xeFf66D2A040097919A1A36D9D8816c21acC3C6C0;
+    address slaveDomainBridge = 0x7b84fFac4A71fE09b14CfF4E0A6429dFfa78630D;
     L1EscrowLike escrow = L1EscrowLike(0x3128d6ffeB4CdD14dC47E4e6A70022F4bf8E7751);
     address dai = 0x17B729a6Ac1f265090cbb4AecBdd53E34664C00e;
     GovernanceRelayLike l1GovRelay = GovernanceRelayLike(
       0x97057eF24d3C69D974Cc5348145b7258c5a503B6
     );
-    address l2ConfigureDomainSpell = 0x154763ea0A5C3a89637CE52404009cC0A182406E;
+    address l2ConfigureDomainSpell = 0x65adb7A66759304b5A081506Baad5408F8ceb650;
 
     router.file(bytes32("gateway"), slaveDomain, slaveDomainBridge);
     wormholeJoin.file(bytes32("fees"), slaveDomain, constantFees);

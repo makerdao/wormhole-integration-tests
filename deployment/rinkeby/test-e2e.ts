@@ -13,8 +13,8 @@ import { ArbitrumL2DaiWormholeGateway__factory, WormholeOracleAuth__factory } fr
 const bytes32 = ethers.utils.formatBytes32String
 const masterDomain = 'RINKEBY-MASTER-1'
 
-const oracleAuth = '0x2629Fc24D68DA19EEbE21A41e617965d5D167AA5'
-const l2WormholeGateway = '0x20B68695f0c88f774ec6c4F8A32c1c7561B6a7F9'
+const oracleAuth = '0x1E7722E502D3dCbB0704f99c75c99a5402598f13'
+const l2WormholeGateway = '0x327c2f7aCd799f31535880Af54C2bCAB1384Ecc3'
 
 async function main() {
   const { l1Signer, l2Signer } = await setupSigners()
