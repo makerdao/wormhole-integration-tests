@@ -88,5 +88,16 @@ export default defineConfig({
         l2DaiGateway: '0x7DC1e34e97c990f2B7d46777a47Fa47D069A8825',
       },
     },
+
+    goerli: {
+      maker: {
+        vat: '0xB966002DDAa2Baf48369f5015329750019736031',
+        dai_join: '0x6a60b7070befb2bfc964F646efDF70388320f4E0',
+        vow: '0x23f78612769b9013b3145E43896Fa1578cAa2c2a',
+        pause_proxy: '0x5DCdbD3cCF9B09EAAD03bc5f50fA2B3d3ACA0121',
+        esm: '0x023A960cb9BE7eDE35B433256f4AfE9013334b55',
+        dai: '0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844',
+      },
+    },
   },
 })
