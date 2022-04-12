@@ -7,7 +7,6 @@ import { mapValues } from 'lodash'
 import { Dictionary } from 'ts-essentials'
 dotenv.config()
 
-
 import { deployWormhole } from '../../test/wormhole'
 import { performWormholeSanityChecks } from '../../test/wormhole/checks'
 
@@ -34,13 +33,7 @@ async function main() {
     globalFeeTTL: feeTTL,
   })
 
-  await performWormholeSanityChecks(
-    l1Signer,
-    goerliSdk.maker,
-    wormholeSdk,
-    l1StartingBlock,
-    false,
-  )
+  await performWormholeSanityChecks(l1Signer, goerliSdk.maker, wormholeSdk, l1StartingBlock, false)
 
   console.log('Wormhole: ', getSdkAddresses(wormholeSdk))
 }

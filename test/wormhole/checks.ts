@@ -25,15 +25,9 @@ export async function performSanityChecks(
     wormholeBridgeSdk,
     l2BlockOfBeginningOfDeployment,
     includeDeployer,
-)
-
-  await performWormholeSanityChecks(
-    l1Signer,
-    makerSdk,
-    wormholeSdk,
-    l1BlockOfBeginningOfDeployment,
-    includeDeployer,
   )
+
+  await performWormholeSanityChecks(l1Signer, makerSdk, wormholeSdk, l1BlockOfBeginningOfDeployment, includeDeployer)
 }
 
 export async function performWormholeSanityChecks(
@@ -93,7 +87,6 @@ export async function performBridgeSanityChecks(
   ])
 
   expect(await wormholeBridgeSdk.l1WormholeBridge.l1Escrow()).to.be.eq(baseBridgeSdk.l1Escrow.address)
-
 }
 
 function normalizeAddresses(addresses: string[]): string[] {
