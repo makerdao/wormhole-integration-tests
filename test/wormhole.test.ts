@@ -4,16 +4,8 @@ import { Wallet } from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 
-import {
-  BasicRelay,
-  BasicRelay__factory,
-  TrustedRelay,
-  TrustedRelay__factory,
-  WormholeJoin,
-  WormholeOracleAuth,
-  WormholeRouter,
-} from '../typechain'
-import { deployUsingFactory, getContractFactory, toEthersBigNumber, toRad, toRay, toWad, waitForTx } from './helpers'
+import { BasicRelay, TrustedRelay, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../typechain'
+import { toEthersBigNumber, toRad, toRay, toWad, waitForTx } from './helpers'
 import {
   callBasicRelay,
   callTrustedRelay,
