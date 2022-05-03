@@ -611,6 +611,8 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
           bud: l1Signer.address,
         })
         await castConfigureTrustedRelaySpell()
+
+        await waitForTx(trustedRelay.connect(l1Signer).addSigners([l1Signer.address]))
       })
 
       it('lets a user obtain minted DAI on L1 using oracle attestations via a trusted relayer contract', async () => {
