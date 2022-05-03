@@ -70,7 +70,7 @@ export async function callTrustedRelay({
     expiry,
   })
   console.log('Calling TrustedRelay.relay()...')
-  return await waitForTx(trustedRelay.connect(l1Signer).relay(...relayArgs, constants.AddressZero, ''))
+  return await waitForTx(trustedRelay.connect(l1Signer).relay(...relayArgs, constants.AddressZero, '0x'))
 }
 
 async function getRelayArgs({

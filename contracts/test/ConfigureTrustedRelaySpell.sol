@@ -20,6 +20,12 @@ interface TrustedRelayLike {
   function file(bytes32 what, uint256 data) external;
 
   function kiss(address usr) external;
+
+  function ethPriceOracle() external view returns (address);
+}
+
+interface MedianLike {
+  function kiss(address usr) external;
 }
 
 contract ConfigureTrustedRelaySpell {
@@ -38,7 +44,9 @@ contract ConfigureTrustedRelaySpell {
   }
 
   function execute() external {
-    trustedRelay.file("margin", gasMargin);
+    MedianLike median = MedianLike(trustedRelay.ethPriceOracle());
+    median.kiss(address(trustedRelay));
+    trustedRelay.file(bytes32("margin"), gasMargin);
     trustedRelay.kiss(bud);
   }
 }

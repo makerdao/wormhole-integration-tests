@@ -52,6 +52,8 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
     let l1Signer: Wallet
     let l2WormholeBridge: L2WormholeBridgeLike
     let oracleAuth: WormholeOracleAuth
+    let basicRelay: BasicRelay
+    let trustedRelay: TrustedRelay
     let join: WormholeJoin
     let router: WormholeRouter
     let l2Dai: DaiLike
@@ -70,6 +72,8 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
         router,
         join,
         oracleAuth,
+        basicRelay,
+        trustedRelay,
         l2Dai,
         l2WormholeBridge,
         l1Escrow,
@@ -472,18 +476,8 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
     })
 
     describe('basic relay', () => {
-      let basicRelay: BasicRelay
       const expiry = '10000000000'
       const gasFee = parseEther('1.0')
-
-      before(async () => {
-        console.log('Deploying BasicRelay...')
-        basicRelay = await deployUsingFactory(l1Signer, getContractFactory<BasicRelay__factory>('BasicRelay'), [
-          oracleAuth.address,
-          makerSdk.dai_join.address,
-        ])
-        console.log('BasicRelay deployed at:', basicRelay.address)
-      })
 
       it('lets a user obtain minted DAI on L1 using oracle attestations via a basic relayer contract', async () => {
         const maxFeePercentage = 0
@@ -589,19 +583,10 @@ export function runWormholeTests(domain: string, setupDomain: DomainSetupFunctio
     })
 
     describe('trusted relay', () => {
-      let trustedRelay: TrustedRelay
       const expiry = '10000000000'
       const gasFee = parseEther('1.0')
 
       before(async () => {
-        console.log('Deploying TrustedRelay...')
-        trustedRelay = await deployUsingFactory(l1Signer, getContractFactory<TrustedRelay__factory>('TrustedRelay'), [
-          oracleAuth.address,
-          makerSdk.dai_join.address,
-          makerSdk.median_ethusd.address,
-        ])
-        console.log('TrustedRelay deployed at:', trustedRelay.address)
-
         // Deploy and cast trustedRelay configuration spell on L1
         const { castConfigureTrustedRelaySpell } = await deployConfigureTrustedRelaySpell({
           l1Signer,

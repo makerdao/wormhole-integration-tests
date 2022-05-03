@@ -65,6 +65,14 @@ interface RouterLike {
 
 interface TrustedRelayLike {
   function file(bytes32 what, uint256 data) external;
+
+  function kiss(address usr) external;
+
+  function ethPriceOracle() external view returns (address);
+}
+
+interface MedianLike {
+  function kiss(address usr) external;
 }
 
 interface L1EscrowLike {
@@ -108,6 +116,10 @@ contract DssSpellAction is DssAction {
   function setupTrustedRelay() internal {
     TrustedRelayLike trustedRelay = TrustedRelayLike(0x0000000000000000000000000000000000000000);
     trustedRelay.file(bytes32("margin"), 15000);
+
+    MedianLike median = MedianLike(trustedRelay.ethPriceOracle());
+    median.kiss(address(trustedRelay));
+    // trustedRelay.kiss(0x0000000000000000000000000000000000000000); // authorise integrator's account
   }
 
   function actions() public override {
