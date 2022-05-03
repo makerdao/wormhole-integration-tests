@@ -68,7 +68,7 @@ interface SetupTestResult {
   oracleAuth: WormholeOracleAuth
   router: WormholeRouter
   constantFee: WormholeConstantFee
-  relay: BasicRelay
+  basicRelay: BasicRelay
   l2Dai: DaiLike
   l1Escrow: L1EscrowLike
   l2WormholeBridge: any

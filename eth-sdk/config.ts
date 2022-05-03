@@ -10,6 +10,7 @@ export default defineConfig({
         dai: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
         pause_proxy: '0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB',
         esm: '0x29CfBd381043D00a98fD9904a431015Fef07af2f',
+        median_ethusd: '0x64DE91F5A373Cd4c28de3600cB34C7C6cE410C85',
       },
       optimism: {
         xDomainMessenger: '0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1',
@@ -35,6 +36,7 @@ export default defineConfig({
         dai: '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa',
         pause_proxy: '0x0e4725db88Bb038bBa4C4723e91Ba183BE11eDf3',
         esm: '0xD5D728446275B0A12E4a4038527974b92353B4a9',
+        median_ethusd: '0x0e30f0fc91fdbc4594b1e2e5d64e6f1f94cab23d',
       },
 
       optimismDaiBridge: {
@@ -70,6 +72,7 @@ export default defineConfig({
         pause_proxy: '0x4463830546A8cFcFa1b6Eb660Df17A29a4F4e06F',
         esm: '0x0000000000000000000000000000000000000000',
         dai: '0x17B729a6Ac1f265090cbb4AecBdd53E34664C00e',
+        median_ethusd: '0xd62553cfac95667a5a1d97156647fd9abb65c8e8',
       },
       arbitrumDaiBridge: {
         l1Escrow: '0x3128d6ffeB4CdD14dC47E4e6A70022F4bf8E7751',
