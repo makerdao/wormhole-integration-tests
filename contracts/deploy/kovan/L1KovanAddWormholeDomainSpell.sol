@@ -114,12 +114,12 @@ contract DssSpellAction is DssAction {
   }
 
   function setupTrustedRelay() internal {
-    TrustedRelayLike trustedRelay = TrustedRelayLike(0x0000000000000000000000000000000000000000);
+    TrustedRelayLike trustedRelay = TrustedRelayLike(0xAAFa36901AdC6C03df8B935fFA129677D1D7Eb81);
     trustedRelay.file(bytes32("margin"), 15000);
+    // trustedRelay.kiss(0x0000000000000000000000000000000000000000); // authorise integrator's account
 
     MedianLike median = MedianLike(trustedRelay.ethPriceOracle());
     median.kiss(address(trustedRelay));
-    // trustedRelay.kiss(0x0000000000000000000000000000000000000000); // authorise integrator's account
   }
 
   function actions() public override {

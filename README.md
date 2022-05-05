@@ -36,8 +36,9 @@ If you wish to quickly test some changes in smart contract code, just tweak sour
    `contracts/deploy/rinkeby/L1RinkebyAddWormholeDomainSpell.sol`.
 
 4. Set the addresses of the newly deployed `wormholeJoin`, `router` (WormholeRouter), `oracleAuth` (WormholeOracleAuth),
-   `constantFees` (WormholeConstantFees), `slaveDomainBridge` (L1WormholeGateway) and `l2ConfigureDomainSpell`
-   (L2RinkebyAddWormholeDomainSpell) in `contracts/deploy/rinkeby/L1RinkebyAddWormholeDomainSpell.sol`.
+   `constantFees` (WormholeConstantFees), `trustedRelay` (TrustedRelay), `slaveDomainBridge` (L1WormholeGateway) and
+   `l2ConfigureDomainSpell` (L2RinkebyAddWormholeDomainSpell) in
+   `contracts/deploy/rinkeby/L1RinkebyAddWormholeDomainSpell.sol`.
 
 5. Run `npx hardhat run deployment/rinkeby/cast-l1-spell.ts` to deploy and cast the L1 spell on rinkeby. Wait ~5 minutes
    for the execution of the L2 spell to be confirmed.
@@ -54,7 +55,8 @@ If you wish to quickly test some changes in smart contract code, just tweak sour
       "oracleAuth": "0x1E7722E502D3dCbB0704f99c75c99a5402598f13",
       "router": "0x26266ff35E2d69C6a2DC3fAE9FA71456043a0611",
       "constantFee": "0xeFf66D2A040097919A1A36D9D8816c21acC3C6C0",
-      "relay": "0xC35787975484A858B878032B045B6E0B6EfE2e2c"
+      "basicRelay": "0xC35787975484A858B878032B045B6E0B6EfE2e2c",
+      "trustedRelay": "0xef4dF54E711e0d42754a12e85fD4186f8fF2c7A7",
    }
 
    "Arbitrum wormhole gateways": {
@@ -88,9 +90,9 @@ If you wish to quickly test some changes in smart contract code, just tweak sour
    `contracts/deploy/kovan/L2KovanAddWormholeDomainSpell.sol` and deploy this L2 spell on optimistic-kovan.
 
 3. Set the addresses of the newly deployed `wormholeJoin`, `router` (WormholeRouter), `oracleAuth` (WormholeOracleAuth),
-   `constantFees` (WormholeConstantFees), `slaveDomainGateway` (L1WormholeGateway) and `l2ConfigureDomainSpell`
-   (L2RinkebyAddWormholeDomainSpell) in `contracts/deploy/kovan/L1KovanAddWormholeDomainSpell.sol` and deploy this L1
-   spell on kovan.
+   `constantFees` (WormholeConstantFees), `trustedRelay` (TrustedRelay), `slaveDomainGateway` (L1WormholeGateway) and
+   `l2ConfigureDomainSpell` (L2RinkebyAddWormholeDomainSpell) in
+   `contracts/deploy/kovan/L1KovanAddWormholeDomainSpell.sol` and deploy this L1 spell on kovan.
 
 4. To test the L2 spell, copy the addresses of the newly deployed `l2Spell` and `l2WormholeGateway` into
    `deployment/kovan/test-l2-spell.ts`, spin up a local hardhark fork of optimistic-kovan and run
@@ -114,7 +116,8 @@ If you wish to quickly test some changes in smart contract code, just tweak sour
       "oracleAuth": "0x0b0D629e294Af96A6cc245a89A5CEa92C8Be9da4",
       "router": "0xb15e4cfb29C587c924f547c4Fcbf440B195f3EF8",
       "constantFee": "0xf61A6F9d13aF9BBf4df95657Db5698c04A97EF85",
-      "relay": "0x5B3363996Bd8164F07315faAf3F96B72D192382c"
+      "basicRelay": "0x5B3363996Bd8164F07315faAf3F96B72D192382c"
+      "trustedRelay": "0xAAFa36901AdC6C03df8B935fFA129677D1D7Eb81"
    },
 
    "Optimism wormhole gateways": {
