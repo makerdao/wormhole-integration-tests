@@ -4,7 +4,14 @@ import { randomBytes } from '@ethersproject/random'
 import { BigNumber, BigNumberish, Contract, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 
-import { BasicRelay, WormholeConstantFee, WormholeJoin, WormholeOracleAuth, WormholeRouter } from '../../typechain'
+import {
+  BasicRelay,
+  TrustedRelay,
+  WormholeConstantFee,
+  WormholeJoin,
+  WormholeOracleAuth,
+  WormholeRouter,
+} from '../../typechain'
 import { BaseBridgeSdk, DaiLike, L1EscrowLike, WormholeBridgeSdk } from '.'
 import { performSanityChecks } from './checks'
 import { RelayTxToL1Function, RelayTxToL2Function } from './messages'
@@ -68,7 +75,8 @@ interface SetupTestResult {
   oracleAuth: WormholeOracleAuth
   router: WormholeRouter
   constantFee: WormholeConstantFee
-  relay: BasicRelay
+  basicRelay: BasicRelay
+  trustedRelay: TrustedRelay
   l2Dai: DaiLike
   l1Escrow: L1EscrowLike
   l2WormholeBridge: any

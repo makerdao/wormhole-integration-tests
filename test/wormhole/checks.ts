@@ -41,6 +41,10 @@ export async function performSanityChecks(
     makerSdk.pause_proxy.address,
     makerSdk.esm.address,
   ])
+  await checkPermissions(wormholeSdk.trustedRelay, l1BlockOfBeginningOfDeployment, [
+    makerSdk.pause_proxy.address,
+    makerSdk.esm.address,
+  ])
 
   await checkPermissions(wormholeBridgeSdk.l2WormholeBridge, l2BlockOfBeginningOfDeployment, [
     baseBridgeSdk.l2GovRelay.address,

@@ -2,6 +2,7 @@ import { JsonRpcProvider, TransactionReceipt } from '@ethersproject/providers'
 import { BigNumber, BigNumberish, Contract, Signer } from 'ethers'
 
 import {
+  ConfigureTrustedRelaySpell__factory,
   FileJoinFeesSpell__factory,
   FileJoinLineSpell__factory,
   PushBadDebtSpell__factory,
@@ -91,6 +92,34 @@ export async function deployFileJoinFeesSpell(
   const castFileJoinFeesSpell = () => executeSpell(opts.l1Signer, opts.sdk, fileJoinFeesSpell)
 
   return { castFileJoinFeesSpell }
+}
+
+interface ConfigureTrustedRelaySpellDeployOpts {
+  l1Signer: Signer
+  sdk: MakerSdk
+  trustedRelayAddress: string
+  gasMargin: number
+  bud: string
+}
+
+export async function deployConfigureTrustedRelaySpell(
+  opts: ConfigureTrustedRelaySpellDeployOpts,
+): Promise<{ castConfigureTrustedRelaySpell: () => Promise<TransactionReceipt> }> {
+  console.log('Deploying ConfigureTrustedRelaySpell...')
+  const ConfigureTrustedRelaySpellFactory = getContractFactory<ConfigureTrustedRelaySpell__factory>(
+    'ConfigureTrustedRelaySpell',
+    opts.l1Signer,
+  )
+  const configureTrustedRelaySpell = await deployUsingFactory(opts.l1Signer, ConfigureTrustedRelaySpellFactory, [
+    opts.trustedRelayAddress,
+    opts.gasMargin,
+    opts.bud,
+  ])
+  console.log('ConfigureTrustedRelaySpell deployed at: ', configureTrustedRelaySpell.address)
+
+  const castConfigureTrustedRelaySpell = () => executeSpell(opts.l1Signer, opts.sdk, configureTrustedRelaySpell)
+
+  return { castConfigureTrustedRelaySpell }
 }
 
 export async function executeSpell(l1Signer: Signer, sdk: MakerSdk, spell: Contract): Promise<TransactionReceipt> {

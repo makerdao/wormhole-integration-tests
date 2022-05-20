@@ -1,33 +1,98 @@
-import { BigNumberish, ContractReceipt, Signer, Wallet } from 'ethers'
+import { BigNumberish, constants, ContractReceipt, Signer, Wallet } from 'ethers'
 import { arrayify, hexConcat, hexZeroPad, Interface, keccak256, splitSignature } from 'ethers/lib/utils'
 
-import { BasicRelay } from '../../typechain'
+import { BasicRelay, TrustedRelay } from '../../typechain'
 import { toEthersBigNumber, waitForTx } from '../helpers'
-import { getAttestations } from './attestations'
+import { getAttestations, WormholeGUID } from './attestations'
 
-interface CallRelayOpt {
-  relay: BasicRelay
+interface GetRelayArgsOpts {
+  payloadSigner: Signer
   txReceipt: ContractReceipt
   l2WormholeBridgeInterface: Interface
-  l1Signer: Signer
-  receiver: Signer
   oracleWallets: Wallet[]
   expiry: BigNumberish
   gasFee: BigNumberish
   maxFeePercentage: BigNumberish
 }
 
+type CallBasicRelayOpts = GetRelayArgsOpts & {
+  basicRelay: BasicRelay
+  l1Signer: Signer
+}
+
 export async function callBasicRelay({
-  relay,
+  basicRelay,
+  l1Signer,
+  payloadSigner,
   txReceipt,
   l2WormholeBridgeInterface,
-  l1Signer,
-  receiver,
   oracleWallets,
   expiry,
   gasFee,
   maxFeePercentage,
-}: CallRelayOpt) {
+}: CallBasicRelayOpts) {
+  const relayArgs = await getRelayArgs({
+    txReceipt,
+    l2WormholeBridgeInterface,
+    payloadSigner,
+    oracleWallets,
+    maxFeePercentage,
+    gasFee,
+    expiry,
+  })
+  console.log('Calling BasicRelay.relay()...')
+  return await waitForTx(basicRelay.connect(l1Signer).relay(...relayArgs))
+}
+
+type CallTrustedRelayOpts = GetRelayArgsOpts & {
+  trustedRelay: TrustedRelay
+  l1Signer: Signer
+}
+
+export async function callTrustedRelay({
+  trustedRelay,
+  l1Signer,
+  payloadSigner,
+  txReceipt,
+  l2WormholeBridgeInterface,
+  oracleWallets,
+  expiry,
+  gasFee,
+  maxFeePercentage,
+}: CallTrustedRelayOpts) {
+  const relayArgs = await getRelayArgs({
+    txReceipt,
+    l2WormholeBridgeInterface,
+    payloadSigner,
+    oracleWallets,
+    maxFeePercentage,
+    gasFee,
+    expiry,
+  })
+  console.log('Calling TrustedRelay.relay()...')
+  return await waitForTx(trustedRelay.connect(l1Signer).relay(...relayArgs, constants.AddressZero, '0x'))
+}
+
+async function getRelayArgs({
+  txReceipt,
+  l2WormholeBridgeInterface,
+  payloadSigner,
+  oracleWallets,
+  maxFeePercentage,
+  gasFee,
+  expiry,
+}: GetRelayArgsOpts): Promise<
+  [
+    wormholeGUID: WormholeGUID,
+    signatures: string,
+    maxFeePercentage: BigNumberish,
+    gasFee: BigNumberish,
+    expiry: BigNumberish,
+    v: number,
+    r: string,
+    s: string,
+  ]
+> {
   const { signatures, wormholeGUID, guidHash } = await getAttestations(
     txReceipt,
     l2WormholeBridgeInterface,
@@ -43,9 +108,6 @@ export async function callBasicRelay({
       ]),
     ),
   )
-  const { r, s, v } = splitSignature(await receiver.signMessage(payload))
-  console.log('Calling BasicRelay.relay()...')
-  return await waitForTx(
-    relay.connect(l1Signer).relay(wormholeGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s),
-  )
+  const { r, s, v } = splitSignature(await payloadSigner.signMessage(payload))
+  return [wormholeGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s]
 }

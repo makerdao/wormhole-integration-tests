@@ -66,6 +66,7 @@ copyDappToolsArtifact(dappToolsArtifacts, 'WormholeConstantFee', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeOracleAuth', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'WormholeRouter', output)
 copyDappToolsArtifact(dappToolsArtifacts, 'BasicRelay', output)
+copyDappToolsArtifact(dappToolsArtifacts, 'TrustedRelay', output)
 
 // copy optimism-dai-bridge artifacts
 copyOptimismBridgeArtifact('l2/dai.sol/Dai.json', output)
@@ -90,6 +91,11 @@ copyArbitrumBridgeArtifact('l2/L2DaiWormholeGateway.sol/L2DaiWormholeGateway.jso
 copyArbitrumBridgeArtifact('l1/L1GovernanceRelay.sol/L1GovernanceRelay.json', output)
 copyArbitrumBridgeArtifact('l2/L2GovernanceRelay.sol/L2GovernanceRelay.json', output)
 
+copyHardhatArtifact(
+  join(hardhatTestArtifacts, 'test/ConfigureTrustedRelaySpell.sol/ConfigureTrustedRelaySpell.json'),
+  output,
+)
+copyHardhatArtifact(join(hardhatTestArtifacts, 'test/ConfigureTrustedRelaySpell.sol/TrustedRelayLike.json'), output)
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/FileJoinFeesSpell.sol/FileJoinFeesSpell.json'), output)
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/FileJoinLineSpell.sol/FileJoinLineSpell.json'), output)
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/PushBadDebtSpell.sol/PushBadDebtSpell.json'), output)
@@ -101,18 +107,18 @@ copyHardhatArtifact(join(hardhatTestArtifacts, 'test/rinkeby/FakeArbitrumBridge.
 copyHardhatArtifact(join(hardhatTestArtifacts, 'test/rinkeby/FakeArbitrumOutbox.sol/FakeArbitrumOutbox.json'), output)
 
 copyHardhatArtifact(
-  join(hardhatTestArtifacts, 'deploy/L1AddWormholeOptimismSpell.sol/L1AddWormholeOptimismSpell.json'),
+  join(hardhatTestArtifacts, 'test/kovan/L1AddWormholeOptimismSpell.sol/L1AddWormholeOptimismSpell.json'),
   output,
 )
 copyHardhatArtifact(
-  join(hardhatTestArtifacts, 'deploy/L1AddWormholeArbitrumSpell.sol/L1AddWormholeArbitrumSpell.json'),
+  join(hardhatTestArtifacts, 'test/rinkeby/L1AddWormholeArbitrumSpell.sol/L1AddWormholeArbitrumSpell.json'),
   output,
 )
 copyHardhatArtifact(
-  join(hardhatTestArtifacts, 'deploy/L1ConfigureWormholeSpell.sol/L1ConfigureWormholeSpell.json'),
+  join(hardhatTestArtifacts, 'test/L1ConfigureWormholeSpell.sol/L1ConfigureWormholeSpell.json'),
   output,
 )
 copyHardhatArtifact(
-  join(hardhatTestArtifacts, 'deploy/L2AddWormholeDomainSpell.sol/L2AddWormholeDomainSpell.json'),
+  join(hardhatTestArtifacts, 'test/L2AddWormholeDomainSpell.sol/L2AddWormholeDomainSpell.json'),
   output,
 )

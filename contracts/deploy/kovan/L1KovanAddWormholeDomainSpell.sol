@@ -63,6 +63,18 @@ interface RouterLike {
   ) external;
 }
 
+interface TrustedRelayLike {
+  function file(bytes32 what, uint256 data) external;
+
+  function kiss(address usr) external;
+
+  function ethPriceOracle() external view returns (address);
+}
+
+interface MedianLike {
+  function kiss(address usr) external;
+}
+
 interface L1EscrowLike {
   function approve(
     address token,
@@ -89,13 +101,7 @@ contract DssSpellAction is DssAction {
     return false;
   }
 
-  function actions() public override {
-    bytes32 masterDomain = "KOVAN-MASTER-1";
-    WormholeJoinLike wormholeJoin = WormholeJoinLike(0x556D9076A42Bba1892E3F4cA331daE587185Cef9);
-    address vow = 0x0F4Cbe6CBA918b7488C26E29d9ECd7368F38EA3b;
-    VatLike vat = VatLike(0xbA987bDB501d131f766fEe8180Da5d81b34b69d9);
-    uint256 globalLine = 10000000000 * RAD;
-    RouterLike router = RouterLike(0xb15e4cfb29C587c924f547c4Fcbf440B195f3EF8);
+  function setupOracleAuth() internal {
     OracleAuthLike oracleAuth = OracleAuthLike(0x0b0D629e294Af96A6cc245a89A5CEa92C8Be9da4);
     address[] memory oracles = new address[](5);
     oracles[0] = 0xC4756A9DaE297A046556261Fa3CD922DFC32Db78; // OCU
@@ -103,6 +109,26 @@ contract DssSpellAction is DssAction {
     oracles[2] = 0x774D5AA0EeE4897a9a6e65Cbed845C13Ffbc6d16; // OCU
     oracles[3] = 0xb41E8d40b7aC4Eb34064E079C8Eca9d7570EBa1d; // OCU
     oracles[4] = 0xc65EF2D17B05ADbd8e4968bCB01b325ab799aBd8; // PECU
+    oracleAuth.file(bytes32("threshold"), 1);
+    oracleAuth.addSigners(oracles);
+  }
+
+  function setupTrustedRelay() internal {
+    TrustedRelayLike trustedRelay = TrustedRelayLike(0xAAFa36901AdC6C03df8B935fFA129677D1D7Eb81);
+    trustedRelay.file(bytes32("margin"), 15000);
+    // trustedRelay.kiss(0x0000000000000000000000000000000000000000); // authorise integrator's account
+
+    MedianLike median = MedianLike(trustedRelay.ethPriceOracle());
+    median.kiss(address(trustedRelay));
+  }
+
+  function actions() public override {
+    bytes32 masterDomain = "KOVAN-MASTER-1";
+    WormholeJoinLike wormholeJoin = WormholeJoinLike(0x556D9076A42Bba1892E3F4cA331daE587185Cef9);
+    address vow = 0x0F4Cbe6CBA918b7488C26E29d9ECd7368F38EA3b;
+    VatLike vat = VatLike(0xbA987bDB501d131f766fEe8180Da5d81b34b69d9);
+    uint256 globalLine = 10000000000 * RAD;
+    RouterLike router = RouterLike(0xb15e4cfb29C587c924f547c4Fcbf440B195f3EF8);
 
     wormholeJoin.file(bytes32("vow"), vow);
     router.file(bytes32("gateway"), masterDomain, address(wormholeJoin));
@@ -111,8 +137,8 @@ contract DssSpellAction is DssAction {
     vat.init(ilk);
     vat.file(ilk, bytes32("spot"), RAY);
     vat.file(ilk, bytes32("line"), globalLine);
-    oracleAuth.file(bytes32("threshold"), 1);
-    oracleAuth.addSigners(oracles);
+    setupOracleAuth();
+    setupTrustedRelay();
 
     // configure optimism wormhole
     bytes32 slaveDomain = "KOVAN-SLAVE-OPTIMISM-1";

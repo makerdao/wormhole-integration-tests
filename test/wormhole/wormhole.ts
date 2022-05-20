@@ -6,6 +6,8 @@ import {
   BasicRelay,
   BasicRelay__factory,
   L1ConfigureWormholeSpell__factory,
+  TrustedRelay,
+  TrustedRelay__factory,
   WormholeConstantFee,
   WormholeConstantFee__factory,
   WormholeJoin,
@@ -41,7 +43,8 @@ export async function deployWormhole({
   oracleAuth: WormholeOracleAuth
   router: WormholeRouter
   constantFee: WormholeConstantFee
-  relay: BasicRelay
+  basicRelay: BasicRelay
+  trustedRelay: TrustedRelay
 }> {
   console.log('Deploying join...')
   const WormholeJoinFactory = getContractFactory<WormholeJoin__factory>('WormholeJoin')
@@ -68,14 +71,24 @@ export async function deployWormhole({
   const router = await deployUsingFactoryAndVerify(defaultSigner, WormholeRouterFactory, [makerSdk.dai.address])
   console.log('WormholeRouter deployed at: ', router.address)
 
-  console.log('Deploying relay...')
+  console.log('Deploying basicRelay...')
   const BasicRelayFactory = getContractFactory<BasicRelay__factory>('BasicRelay')
-  const relay = await deployUsingFactoryAndVerify(defaultSigner, BasicRelayFactory, [
+  const basicRelay = await deployUsingFactoryAndVerify(defaultSigner, BasicRelayFactory, [
     oracleAuth.address,
     makerSdk.dai_join.address,
     { gasLimit: 1500000 },
   ])
-  console.log('BasicRelay deployed at: ', relay.address)
+  console.log('BasicRelay deployed at: ', basicRelay.address)
+
+  console.log('Deploying trustedRelay...')
+  const TrustedRelayFactory = getContractFactory<TrustedRelay__factory>('TrustedRelay')
+  const trustedRelay = await deployUsingFactoryAndVerify(defaultSigner, TrustedRelayFactory, [
+    oracleAuth.address,
+    makerSdk.dai_join.address,
+    makerSdk.median_ethusd.address,
+    { gasLimit: 1500000 },
+  ])
+  console.log('TrustedRelay deployed at: ', trustedRelay.address)
 
   console.log('Finalizing permissions...')
   await waitForTx(join.rely(oracleAuth.address))
@@ -92,7 +105,11 @@ export async function deployWormhole({
   await waitForTx(router.rely(makerSdk.esm.address))
   await waitForTx(router.deny(await defaultSigner.getAddress()))
 
-  return { join, oracleAuth, router, constantFee, relay }
+  await waitForTx(trustedRelay.rely(makerSdk.pause_proxy.address))
+  await waitForTx(trustedRelay.rely(makerSdk.esm.address))
+  await waitForTx(trustedRelay.deny(await defaultSigner.getAddress()))
+
+  return { join, oracleAuth, router, constantFee, basicRelay, trustedRelay }
 }
 export type WormholeSdk = Awaited<ReturnType<typeof deployWormhole>>
 

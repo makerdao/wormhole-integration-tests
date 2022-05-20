@@ -1,7 +1,7 @@
 import { BigNumber, ContractReceipt, Event, Wallet } from 'ethers'
 import { arrayify, hashMessage, Interface, keccak256 } from 'ethers/lib/utils'
 
-interface WormholeGUID {
+export interface WormholeGUID {
   sourceDomain: string
   targetDomain: string
   receiver: string
